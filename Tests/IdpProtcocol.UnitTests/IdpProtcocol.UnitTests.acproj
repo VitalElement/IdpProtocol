@@ -1,0 +1,76 @@
+{
+  "References": [
+    {
+      "Name": "CatchTestFramework"
+    },
+    {
+      "Name": "CommonHal"
+    },
+    {
+      "Name": "IdpProtocol2"
+    }
+  ],
+  "Toolchain": "AvalonStudio.Toolchains.LocalGCC.LocalGCCToolchain",
+  "Debugger2": "AvalonStudio.Debuggers.GDB.Local.LocalGdbDebugger",
+  "ExcludedFiles": [
+    "build"
+  ],
+  "Type": "Executable",
+  "Includes": [
+    {
+      "Value": "./",
+      "Exported": true,
+      "Global": false
+    }
+  ],
+  "Defines": [
+    {
+      "Value": "DEBUG",
+      "Exported": false,
+      "Global": true
+    }
+  ],
+  "StaticLibraries": [],
+  "Executable": "build/bin/IdpProtcocol.UnitTests.exe",
+  "ToolchainSettings": {
+    "AvalonStudio.Toolchains.GCC.GccToolchainSettings": {
+      "CompileSettings": {
+        "Defines": [],
+        "Includes": [],
+        "CompileExtensions": [],
+        "AssembleExtensions": [],
+        "DebugInformation": true,
+        "Rtti": true,
+        "Exceptions": true,
+        "CustomFlags": "-Wno-unknown-pragmas",
+        "CLanguageStandard": "Default",
+        "CppLanguageStandard": "Cpp14",
+        "Optimization": "None",
+        "Fpu": "None"
+      },
+      "LinkSettings": {
+        "LinkedLibraries": [],
+        "LinkerScripts": [],
+        "SystemLibraries": [],
+        "UseMemoryLayout": false,
+        "DiscardUnusedSections": false,
+        "NotUseStandardStartupFiles": false,
+        "Library": "None",
+        "SelectedDeviceId": 0,
+        "InRom1Start": 0,
+        "InRom1Size": 0,
+        "InRom2Start": 0,
+        "InRom2Size": 0,
+        "InRam1Start": 0,
+        "InRam1Size": 0,
+        "InRam2Start": 0,
+        "InRam2Size": 0,
+        "DebugInRam": false
+      }
+    }
+  },
+  "DebugSettings": {},
+  "Settings": {
+    "AvalonStudio.Projects.CPlusPlus.BuildEventsSettings": {}
+  }
+}

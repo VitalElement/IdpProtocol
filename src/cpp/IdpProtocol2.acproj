@@ -1,0 +1,28 @@
+{
+  "References": [
+    {
+      "Name": "AvalonApplication"
+    },
+    {
+      "Name": "CommonHal"
+    },
+    {
+      "Name": "Dispatcher"
+    }
+  ],
+  "ExcludedFiles": [],
+  "Type": "StaticLibrary",
+  "Includes": [
+    {
+      "Value": "./",
+      "Exported": true,
+      "Global": false
+    }
+  ],
+  "StaticLibraries": [],
+  "ToolchainSettings": {},
+  "DebugSettings": {},
+  "Settings": {
+    "AvalonStudio.Projects.CPlusPlus.BuildEventsSettings": {}
+  }
+}
