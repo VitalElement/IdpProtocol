@@ -27,7 +27,7 @@ namespace IdpProtocol
     public class IdpNode
     {
         public const UInt16 UnassignedAddress = 0xFFFF;
-        public const UInt32 DefaultTimeoutMsec = 1000;
+        public const UInt32 DefaultTimeoutMsec = 5000;
         private TaskCompletionSource<bool> _enumerationSource;
         private UInt32 _currentTransactionId;
 
