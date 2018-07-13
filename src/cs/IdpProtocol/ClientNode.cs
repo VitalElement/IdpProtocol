@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 
 namespace IdpProtocol
 {
+    public enum ClientCommand
+    {
+        Connect = 0xD000,
+        Disconnect
+    };
+
     public abstract class ClientNode : IdpNode
     {
         private UInt16 _serverAddress;
@@ -18,6 +24,30 @@ namespace IdpProtocol
         public ClientNode() : this(UnassignedAddress)
         {
 
+        }
+
+        public async Task<bool> ConnectAsync()
+        {
+            var (success, response) = await SendRequestAsync(OutgoingTransaction.Create((UInt16)ClientCommand.Connect, CreateTransactionId()));
+
+            if (success && response != null && response.ResponseCode == IdpResponseCode.OK)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task<bool> DisconnectAsync()
+        {
+            var (success, response) = await SendRequestAsync(OutgoingTransaction.Create((UInt16)ClientCommand.Disconnect, CreateTransactionId()));
+
+            if (success && response != null && response.ResponseCode == IdpResponseCode.OK)
+            {
+                return true;
+            }
+
+            return false;
         }
 
         internal void SetAddress(UInt16 address)
