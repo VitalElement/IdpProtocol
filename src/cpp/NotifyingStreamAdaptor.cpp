@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See licence.md file in the project root for
 // full license information.
 #include "NotifyingStreamAdaptor.h"
+#include "Trace.h"
 
 NotifyingStreamAdaptor::NotifyingStreamAdaptor ()
 {
@@ -41,6 +42,7 @@ void NotifyingStreamAdaptor::Connection (
 
     if (_connection != nullptr)
     {
+        Trace::WriteLine ("Connection Assigned", "NSAdaptor");
         _connectionHandler =
             &(_connection->DataReceived +=
               [this](auto sender, auto& e) { this->Parser ().Parse (); });

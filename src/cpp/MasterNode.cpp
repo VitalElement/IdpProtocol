@@ -10,6 +10,7 @@ constexpr uint16_t MasterNodeAddress = 1;
 MasterNode::MasterNode ()
     : IdpNode (MasterGuid, "Network.Master", MasterNodeAddress)
 {
+    _nodesChanged = false;
     _isEnumerating = false;
     _nextAddress = 2;
     _nodeTimeout = 5000;
@@ -198,8 +199,12 @@ void MasterNode::OnEnumerate ()
 
         PollNetwork ();
 
-        Trace::WriteLine ("Enumeration Complete", "Master Node");
-        TraceNetworkTree ();
+        if (_nodesChanged)
+        {
+            _nodesChanged = false;
+            Trace::WriteLine ("Network structure changed", "MasterNode");
+            TraceNetworkTree ();
+        }
 
         _pollTimer->Start ();
     }
@@ -222,7 +227,7 @@ void MasterNode::EnumerateNetwork ()
     {
         _isEnumerating = true;
 
-        Trace::WriteLine ("Start Network Enumeration", "MasterNode");
+        // Trace::WriteLine ("Start Network Enumeration", "MasterNode");
 
         VisitNodes (_root, [&](NodeInfo& node) {
             if (node.IsRouter ())
@@ -452,6 +457,8 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
 
 void MasterNode::OnNodeAdded (uint16_t parentAddress, uint16_t address)
 {
+    _nodesChanged = true;
+
     _nodeInfo[address] = new NodeInfo (_nodeInfo[parentAddress], address);
 
     _nodeInfo[parentAddress]->Children.push_back (_nodeInfo[address]);
@@ -524,6 +531,8 @@ void MasterNode::InvalidateNodes ()
 
             delete current;
             _freeAddresses.push (address);
+
+            _nodesChanged = true;
         }
         else
         {

@@ -59,6 +59,7 @@ struct NodeInfo
 class MasterNode : public IdpNode
 {
   private:
+    bool _nodesChanged;
     DispatcherTimer* _pollTimer;
     uint16_t _nextAddress;
     std::stack<uint16_t> _freeAddresses;

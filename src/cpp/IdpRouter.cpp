@@ -295,8 +295,8 @@ IdpResponseCode IdpRouter::HandleEnumerateAdaptorCommand (
 
     if (adaptor == nullptr)
     {
-        Trace::WriteLine ("No Adaptor found on Router: %u", "IdpRouter",
-                          Address ());
+        /*Trace::WriteLine ("No Adaptor found on Router: %u", "IdpRouter",
+                          Address ());*/
         outgoing->Write (false);
 
         return IdpResponseCode::OK;
@@ -324,9 +324,9 @@ IdpResponseCode IdpRouter::HandleEnumerateAdaptorCommand (
             }
         }
 
-        Trace::WriteLine ("Adaptor (%s) found on Router: %u, active: %s",
+        /*Trace::WriteLine ("Adaptor (%s) found on Router: %u, active: %s",
                           "IdpRouter", adaptor->Name (), Address (),
-                          adaptor->IsEnumerated () ? "true" : "false");
+                          adaptor->IsEnumerated () ? "true" : "false");*/
 
         outgoing->Write (true)
             ->Write (adaptorSent)
@@ -395,32 +395,36 @@ void IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
     auto transactionId = packet->Read<uint32_t> ();
     packet->Read<uint8_t> ();
 
-    if (command == (uint16_t) NodeCommand::Response)
+    if (source != 1 && destination != 1 && command != 0xC000 &&
+        command != 0xC001)
     {
-        packet->Read<uint8_t> ();
-        auto response = packet->Read<uint16_t> ();
+        if (command == (uint16_t) NodeCommand::Response)
+        {
+            packet->Read<uint8_t> ();
+            auto response = packet->Read<uint16_t> ();
 
-        Trace::Write (
-            "R:0x%04x S:0x%04x D:0x%04x "
-            "C:0x%04x <%s ",
-            "IdpRouter", Address (), source, destination, command,
-            IdpNode::GetNodeCommandDescription ((NodeCommand) response));
-    }
-    else
-    {
-        Trace::Write (
-            "R:0x%04x S:0x%04x D:0x%04x "
-            "C:0x%04x >%s ",
-            "IdpRouter", Address (), source, destination, command,
-            IdpNode::GetNodeCommandDescription ((NodeCommand) command));
-    }
+            Trace::Write (
+                "R:0x%04x S:0x%04x D:0x%04x "
+                "C:0x%04x <%s ",
+                "IdpRouter", Address (), source, destination, command,
+                IdpNode::GetNodeCommandDescription ((NodeCommand) response));
+        }
+        else
+        {
+            Trace::Write (
+                "R:0x%04x S:0x%04x D:0x%04x "
+                "C:0x%04x >%s ",
+                "IdpRouter", Address (), source, destination, command,
+                IdpNode::GetNodeCommandDescription ((NodeCommand) command));
+        }
 
-    if (packet->Length () <= 32)
-    {
-        Trace::AppendBuffer (packet->Data (), packet->Length ());
-    }
+        if (packet->Length () <= 32)
+        {
+            Trace::AppendBuffer (packet->Data (), packet->Length ());
+        }
 
-    Trace::AppendLine ("");
+        Trace::AppendLine ("");
+    }
 
     packet->ResetRead ();
 
