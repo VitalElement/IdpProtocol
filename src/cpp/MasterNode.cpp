@@ -444,8 +444,11 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
                     this->Manager ().UnregisterOneTimeResponseHandler (
                         routerDetectTransactionId);
 
-                    _currentEnumerationNode->EnumerationState =
-                        NodeEnumerationState::Idle;
+                    if (_currentEnumerationNode != nullptr)
+                    {
+                        _currentEnumerationNode->EnumerationState =
+                            NodeEnumerationState::Idle;
+                    }
                 }
             }
             else
@@ -453,8 +456,11 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
                 this->Manager ().UnregisterOneTimeResponseHandler (
                     routerDetectTransactionId);
 
-                _currentEnumerationNode->EnumerationState =
-                    NodeEnumerationState::Idle;
+                if (_currentEnumerationNode != nullptr)
+                {
+                    _currentEnumerationNode->EnumerationState =
+                        NodeEnumerationState::Idle;
+                }
             }
 
             _freeAddresses.push (address);
@@ -527,7 +533,6 @@ void MasterNode::InvalidateNodes ()
 
                 childIt++;
             }
-
 
             if (current->Parent != nullptr)
             {
