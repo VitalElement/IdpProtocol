@@ -749,3 +749,51 @@ TEST_CASE (
     nodeInfo = masterNode.GetNodeInfo (remoteNode3.Address ());
     REQUIRE (nodeInfo.Parent->Address == router2.Address ());
 }
+
+TEST_CASE ("Network is reenumerated following collapse")
+{
+    TestRuntime::Initialise ();
+
+    auto& masterNode = *new MasterNode ();
+    auto& router = *new IdpRouter ();
+    auto& router2 = *new IdpRouter ();
+
+    auto& childNode1 = *new IdpNode (TestGuid, "Child.Node.1");
+    auto& childNode2 = *new IdpNode (TestGuid, "Child.Node.2");
+
+    router.AddNode (masterNode);
+    router.AddNode (childNode1);
+    router.AddNode (childNode2);
+
+    auto& adaptor1 = *new SimpleAdaptor ();
+    auto& adaptor2 = *new SimpleAdaptor ();
+
+    router.AddAdaptor (adaptor1);
+    router2.AddAdaptor (adaptor2);
+
+    adaptor1.SetRemote (adaptor2);
+    adaptor2.SetRemote (adaptor1);
+
+    auto& remoteNode1 = *new IdpNode (TestGuid, "Remote.Node.1");
+    auto& remoteNode2 = *new IdpNode (TestGuid, "Remote.Node.2");
+
+    router2.AddNode (remoteNode1);
+    router2.AddNode (remoteNode2);
+
+    masterNode.EnumerateNetwork ();
+
+    REQUIRE_FALSE (masterNode.IsEnumerating ());
+
+    masterNode.PollNetwork ();
+
+    TestRuntime::IterateRuntime (10000);
+
+    masterNode.PollNetwork ();
+
+    TestRuntime::IterateRuntime (10000);
+    TestRuntime::IterateRuntime (1000);
+
+    masterNode.EnumerateNetwork ();
+
+    REQUIRE_FALSE (masterNode.IsEnumerating ());
+}

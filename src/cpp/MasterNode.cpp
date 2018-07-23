@@ -227,19 +227,27 @@ void MasterNode::EnumerateNetwork ()
     {
         _isEnumerating = true;
 
-        // Trace::WriteLine ("Start Network Enumeration", "MasterNode");
-
         VisitNodes (_root, [&](NodeInfo& node) {
             if (node.IsRouter ())
             {
                 node.EnumerationState = NodeEnumerationState::Pending;
             }
-            else if (&node != _root)
+            else
             {
-                node.EnumerationState = NodeEnumerationState::Idle;
-            }
+                if (&node == _root)
+                {
+                    if (node.Children.size () == 0)
+                    {
+                        node.EnumerationState = NodeEnumerationState::Pending;
+                    }
+                }
+                else
+                {
+                    node.EnumerationState = NodeEnumerationState::Idle;
+                }
 
-            return true;
+                return true;
+            }
         });
 
         OnEnumerate ();
