@@ -364,7 +364,8 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
 
     Manager ().RegisterOneTimeResponseHandler (
         routerDetectTransactionId,
-        [&, address, routerAddress](std::shared_ptr<IdpResponse> response) {
+        [&, address, routerAddress,
+         routerDetectTransactionId](std::shared_ptr<IdpResponse> response) {
             if (response != nullptr &&
                 response->ResponseCode () == IdpResponseCode::OK)
             {
@@ -400,7 +401,8 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
 
     SendRequest (
         routerAddress, outgoingTransaction,
-        [&, address](std::shared_ptr<IdpResponse> response) {
+        [&, address, routerAddress,
+         routerDetectTransactionId](std::shared_ptr<IdpResponse> response) {
             if (response != nullptr &&
                 response->ResponseCode () == IdpResponseCode::OK)
             {
@@ -421,9 +423,6 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
                         // or set a trasaction id that gets relayed,
                         // and make timeouts work on tid not command
                         // id.
-
-                        // if this is false we the adaptor is already
-                        // successfully connected to a remote router.
                         return;
                     }
                     else
