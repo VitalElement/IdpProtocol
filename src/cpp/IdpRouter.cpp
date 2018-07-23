@@ -392,7 +392,6 @@ void IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
 
     packet->ResetReadToPayload ();
     auto command = packet->Read<uint16_t> ();
-    auto transactionId = packet->Read<uint32_t> ();
     packet->Read<uint8_t> ();
 
     if (source != 1 && destination != 1 && command != 0xC000 &&
