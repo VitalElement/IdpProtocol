@@ -22,7 +22,7 @@ namespace IdpProtocol.Tests
 
             parser.PacketParsed += (sender, e) =>
             {
-                payload = e.Payload;
+                payload = e.Packet.Data;
             };
 
             parser.Parse();
