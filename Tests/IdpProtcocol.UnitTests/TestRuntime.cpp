@@ -34,6 +34,7 @@ void TestRuntime::Initialise ()
 {
     Trace::InitialiseDefaults ();
     Trace::InitialiseStdOut ();
+    Trace::SetGetTimeStampAction (GetSystemTime);
     Trace::SetBuffer (new uint8_t[512], 512);
     Trace::ColorsEnabled (false);
 
