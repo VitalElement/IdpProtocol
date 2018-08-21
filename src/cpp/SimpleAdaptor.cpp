@@ -25,9 +25,7 @@ bool SimpleAdaptor::Transmit (std::shared_ptr<IdpPacket> packet)
 {
     if (_remote != nullptr)
     {
-        _remote->OnReceive (packet);
-
-        return true;
+        return _remote->OnReceive (packet);
     }
 
     return false;

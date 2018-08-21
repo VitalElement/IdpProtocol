@@ -31,6 +31,6 @@ class IAdaptorToRouterPort
     {
     }
 
-    virtual void Transmit (uint16_t adaptorId,
+    virtual bool Transmit (uint16_t adaptorId,
                            std::shared_ptr<IdpPacket> packet) = 0;
 };

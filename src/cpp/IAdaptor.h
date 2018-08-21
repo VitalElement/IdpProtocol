@@ -63,12 +63,14 @@ class IAdaptor : public IPacketTransmit
         _local = &local;
     }
 
-    void OnReceive (std::shared_ptr<IdpPacket> packet)
+    bool OnReceive (std::shared_ptr<IdpPacket> packet)
     {
         if (_id != 0 && _local != nullptr)
         {
-            _local->Transmit (_id, packet);
+            return _local->Transmit (_id, packet);
         }
+
+        return false;
     }
 
     bool IsEnumerated ()

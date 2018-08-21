@@ -23,10 +23,18 @@ MasterNode::MasterNode ()
 
     _nodeInfo[Address ()] = _root;
 
-    Manager ().RegisterResponseHandler (
+    Manager ().RegisterCommand (
         static_cast<uint16_t> (NodeCommand::Ping),
-        [&](std::shared_ptr<IdpResponse> response) {
-            this->HandlePollResponse (response->Transaction ()->Source ());
+        [&](std::shared_ptr<IncomingTransaction> incoming,
+            std::shared_ptr<OutgoingTransaction> outgoing) {
+            if (this->HandlePollResponse (incoming->Source ()))
+            {
+                return IdpResponseCode::OK;
+            }
+            else
+            {
+                return IdpResponseCode::NotReady;
+            }
         });
 
     Manager ().RegisterCommand (
@@ -40,7 +48,6 @@ MasterNode::MasterNode ()
 
             return IdpResponseCode::OK;
         });
-
 
     _pollTimer = new DispatcherTimer (1000);
 
@@ -92,7 +99,7 @@ NodeInfo* MasterNode::GetNextEnumerationNode ()
     return result;
 }
 
-void MasterNode::HandlePollResponse (uint16_t address)
+bool MasterNode::HandlePollResponse (uint16_t address)
 {
     if (address != Address ())
     {
@@ -101,12 +108,12 @@ void MasterNode::HandlePollResponse (uint16_t address)
         if (node != nullptr)
         {
             node->LastSeen = Application::GetApplicationTime ();
-        }
-        else
-        {
-            // In trouble.
+
+            return true;
         }
     }
+
+    return false;
 }
 
 NodeInfo* MasterNode::FindNode (uint16_t address)
@@ -245,9 +252,9 @@ void MasterNode::EnumerateNetwork ()
                 {
                     node.EnumerationState = NodeEnumerationState::Idle;
                 }
-
-                return true;
             }
+
+            return true;
         });
 
         OnEnumerate ();
@@ -264,29 +271,34 @@ void MasterNode::DetectRouter ()
 
     outgoingTransaction->Write (address);
 
-    SendRequest (0xFFFF, outgoingTransaction,
-                 [&, address](std::shared_ptr<IdpResponse> response) {
-                     if (response != nullptr &&
-                         response->ResponseCode () == IdpResponseCode::OK)
-                     {
-                         auto nodeEnumerated =
-                             response->Transaction ()->Read<bool> ();
+    if (!SendRequest (0xFFFF, outgoingTransaction,
+                      [&, address](std::shared_ptr<IdpResponse> response) {
+                          if (response != nullptr &&
+                              response->ResponseCode () == IdpResponseCode::OK)
+                          {
+                              auto nodeEnumerated =
+                                  response->Transaction ()->Read<bool> ();
 
-                         if (nodeEnumerated)
-                         {
-                             _currentEnumerationNode->EnumerationState =
-                                 NodeEnumerationState::Idle;
+                              if (nodeEnumerated)
+                              {
+                                  _currentEnumerationNode->EnumerationState =
+                                      NodeEnumerationState::Idle;
 
-                             this->OnNodeAdded (this->Address (), address);
+                                  this->OnNodeAdded (this->Address (), address);
 
-                             return;
-                         }
-                     }
+                                  return;
+                              }
+                          }
 
-                     _freeAddresses.push (address);
+                          _freeAddresses.push (address);
 
-                     this->OnEnumerate ();
-                 });
+                          this->OnEnumerate ();
+                      }))
+    {
+        _currentEnumerationNode->EnumerationState = NodeEnumerationState::Idle;
+
+        this->OnEnumerate ();
+    }
 }
 
 void MasterNode::EnumerateRouterNode (uint16_t routerAddress)
@@ -299,7 +311,7 @@ void MasterNode::EnumerateRouterNode (uint16_t routerAddress)
             CreateTransactionId ())
             ->Write (address);
 
-    SendRequest (
+    bool sent = SendRequest (
         routerAddress, outgoingTransaction,
         [&, address, routerAddress](std::shared_ptr<IdpResponse> response) {
             if (response != nullptr &&
@@ -325,6 +337,15 @@ void MasterNode::EnumerateRouterNode (uint16_t routerAddress)
 
             this->OnEnumerate ();
         });
+
+    if (!sent)
+    {
+        Trace::WriteLine ("Enumerate nodes failed.");
+
+        _currentEnumerationNode->EnumerationState = NodeEnumerationState::Idle;
+
+        this->OnEnumerate ();
+    }
 }
 
 void MasterNode::StartEnumerateRouterAdaptors (uint16_t routerAddress)
@@ -333,28 +354,38 @@ void MasterNode::StartEnumerateRouterAdaptors (uint16_t routerAddress)
         static_cast<uint16_t> (NodeCommand::RouterPrepareToEnumerateAdaptors),
         CreateTransactionId ());
 
-    SendRequest (routerAddress, outgoingTransaction,
-                 [&](std::shared_ptr<IdpResponse> response) {
-                     if (response != nullptr &&
-                         response->ResponseCode () == IdpResponseCode::OK)
-                     {
-                         if (_currentEnumerationNode != nullptr)
+    bool sent =
+        SendRequest (routerAddress, outgoingTransaction,
+                     [&](std::shared_ptr<IdpResponse> response) {
+                         if (response != nullptr &&
+                             response->ResponseCode () == IdpResponseCode::OK)
                          {
-                             _currentEnumerationNode->EnumerationState =
-                                 NodeEnumerationState::EnumeratingAdaptors;
+                             if (_currentEnumerationNode != nullptr)
+                             {
+                                 _currentEnumerationNode->EnumerationState =
+                                     NodeEnumerationState::EnumeratingAdaptors;
+                             }
                          }
-                     }
-                     else
-                     {
-                         if (_currentEnumerationNode != nullptr)
+                         else
                          {
-                             _currentEnumerationNode->EnumerationState =
-                                 NodeEnumerationState::Idle;
+                             if (_currentEnumerationNode != nullptr)
+                             {
+                                 _currentEnumerationNode->EnumerationState =
+                                     NodeEnumerationState::Idle;
+                             }
                          }
-                     }
 
-                     this->OnEnumerate ();
-                 });
+                         this->OnEnumerate ();
+                     });
+
+    if (!sent)
+    {
+        Trace::WriteLine ("Begin Enumerate adaptors failed.");
+
+        _currentEnumerationNode->EnumerationState = NodeEnumerationState::Idle;
+
+        this->OnEnumerate ();
+    }
 }
 
 void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
@@ -407,7 +438,7 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
         });
 
 
-    SendRequest (
+    bool sent = SendRequest (
         routerAddress, outgoingTransaction,
         [&, address, routerAddress,
          routerDetectTransactionId](std::shared_ptr<IdpResponse> response) {
@@ -466,6 +497,18 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
             _freeAddresses.push (address);
             this->OnEnumerate ();
         });
+
+    if (!sent)
+    {
+        this->Manager ().UnregisterOneTimeResponseHandler (
+            routerDetectTransactionId);
+
+        Trace::WriteLine ("Enumerate adaptor failed.");
+
+        _currentEnumerationNode->EnumerationState = NodeEnumerationState::Idle;
+
+        this->OnEnumerate ();
+    }
 }
 
 void MasterNode::OnNodeAdded (uint16_t parentAddress, uint16_t address)
@@ -556,19 +599,6 @@ void MasterNode::InvalidateNodes ()
 void MasterNode::PollNetwork ()
 {
     InvalidateNodes ();
-
-    VisitNodes (_root, [&](NodeInfo& node) {
-        if (&node != _root)
-        {
-            auto outgoingTransaction = OutgoingTransaction ::Create (
-                static_cast<uint16_t> (NodeCommand::Ping),
-                CreateTransactionId ());
-
-            SendRequest (node.Address, outgoingTransaction);
-        }
-
-        return true;
-    });
 }
 
 uint32_t MasterNode::NodeTimeout ()
@@ -590,7 +620,7 @@ void MasterNode::TraceNetworkTree (NodeInfo* node, uint32_t level)
 
     Trace::Write ("");
 
-    for (int i = 0; i < level * 4; i++)
+    for (uint32_t i = 0; i < level * 4; i++)
     {
         Trace::Append ("-");
     }

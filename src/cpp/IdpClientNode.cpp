@@ -17,8 +17,6 @@ IdpClientNode::IdpClientNode (Guid_t guid, const char* name, uint16_t address)
                                     std::shared_ptr<OutgoingTransaction> o) {
                                     _clientAddress = i->Source ();
 
-                                    ClientConnected (this);
-
                                     return IdpResponseCode::OK;
                                 });
 
@@ -27,8 +25,6 @@ IdpClientNode::IdpClientNode (Guid_t guid, const char* name, uint16_t address)
         [&](std::shared_ptr<IncomingTransaction> i,
             std::shared_ptr<OutgoingTransaction> o) {
             _clientAddress = UnassignedAddress;
-
-            ClientDisconnected (this);
 
             return IdpResponseCode::OK;
         });

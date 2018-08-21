@@ -58,7 +58,7 @@ class IdpRouter : public IdpNode,
 
     bool Transmit (std::shared_ptr<IdpPacket> packet);
 
-    void Transmit (uint16_t adaptorId, std::shared_ptr<IdpPacket> packet);
+    bool Transmit (uint16_t adaptorId, std::shared_ptr<IdpPacket> packet);
 
     bool MarkEnumerated (IdpNode& node);
     void MarkUnenumerated (IdpNode& node);
@@ -68,5 +68,7 @@ class IdpRouter : public IdpNode,
 
     bool AddAdaptor (IAdaptor& adaptor);
 
-    void Route (std::shared_ptr<IdpPacket> packet);
+    bool Route (std::shared_ptr<IdpPacket> packet);
+
+    void OnPollTimerTick ();
 };

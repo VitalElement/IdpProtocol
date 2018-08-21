@@ -17,12 +17,23 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
     _name = name;
     _lastPing = 0;
 
+    Manager ().RegisterResponseHandler (
+        static_cast<uint16_t> (NodeCommand::Ping),
+        [&](std::shared_ptr<IdpResponse> response) {
+            if (response->ResponseCode () == IdpResponseCode::OK)
+            {
+                _lastPing = Application::GetApplicationTime ();
+            }
+            else
+            {
+                OnReset ();
+            }
+        });
+
     Manager ().RegisterCommand (
         static_cast<uint16_t> (NodeCommand::Ping),
         [&](std::shared_ptr<IncomingTransaction> incoming,
             std::shared_ptr<OutgoingTransaction> outgoing) {
-            _lastPing = Application::GetApplicationTime ();
-
             return IdpResponseCode::OK;
         });
 
@@ -66,19 +77,33 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
 
     _pingTimer = new DispatcherTimer (1000, false);
 
-    _pingTimer->Tick += [&](auto sender, auto& e) {
-        auto elapsedTime = Application::GetApplicationTime () - _lastPing;
-
-        if (elapsedTime > 4000)
-        {
-            this->OnReset ();
-        }
-    };
+    _pingTimer->Tick += [&](auto sender, auto& e) { this->OnPollTimerTick (); };
 }
 
 IdpNode::~IdpNode ()
 {
     delete _commandManager;
+}
+
+void IdpNode::OnPollTimerTick ()
+{
+    auto elapsedTime = Application::GetApplicationTime () - _lastPing;
+
+    if (elapsedTime > 4000)
+    {
+        this->OnReset ();
+    }
+    else
+    {
+        auto outgoingTransaction = OutgoingTransaction ::Create (
+            static_cast<uint16_t> (NodeCommand::Ping),
+            this->CreateTransactionId ());
+
+        if (!this->SendRequest (1, outgoingTransaction))
+        {
+            this->OnReset ();
+        }
+    }
 }
 
 uint32_t IdpNode::CreateTransactionId ()
@@ -210,8 +235,13 @@ bool IdpNode::SendRequest (uint16_t source, uint16_t destination,
 {
     if (Connected ())
     {
-        return TransmitEndpoint ().Transmit (
-            request->ToPacket (source, destination));
+        if (_enabled)
+        {
+            return TransmitEndpoint ().Transmit (
+                request->ToPacket (source, destination));
+        }
+
+        return true;
     }
 
     return false;

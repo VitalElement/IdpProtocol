@@ -32,9 +32,6 @@ class IdpClientNode : public IdpNode
 
     virtual ~IdpClientNode ();
 
-    Event ClientConnected;
-    Event ClientDisconnected;
-
   protected:
     bool IsClientConnected ();
     uint16_t ClientAddress ();

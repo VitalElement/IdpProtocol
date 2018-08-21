@@ -73,7 +73,7 @@ class MasterNode : public IdpNode
 
     uint16_t GetFreeAddress ();
 
-    void HandlePollResponse (uint16_t address);
+    bool HandlePollResponse (uint16_t address);
 
     void InvalidateNodes ();
 

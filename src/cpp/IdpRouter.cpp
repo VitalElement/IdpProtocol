@@ -12,6 +12,13 @@ IdpRouter::IdpRouter () : IdpNode (RouterGuid, "Network.Router")
     _currentlyEnumeratingAdaptor = nullptr;
 
     Manager ().RegisterCommand (
+        static_cast<uint16_t> (NodeCommand::RouterPoll),
+        [&](std::shared_ptr<IncomingTransaction> incoming,
+            std::shared_ptr<OutgoingTransaction> outgoing) {
+            return IdpResponseCode::OK;
+        });
+
+    Manager ().RegisterCommand (
         static_cast<uint16_t> (NodeCommand::RouterDetect),
         [&](std::shared_ptr<IncomingTransaction> incoming,
             std::shared_ptr<OutgoingTransaction> outgoing) {
@@ -86,7 +93,6 @@ IdpRouter::IdpRouter () : IdpNode (RouterGuid, "Network.Router")
             return IdpResponseCode::OK;
         });
 
-
     // Routers endpoint is themselves, routing tables will find the correct
     // adaptor.
     TransmitEndpoint (*this);
@@ -96,6 +102,54 @@ IdpRouter::IdpRouter () : IdpNode (RouterGuid, "Network.Router")
 
 IdpRouter::~IdpRouter ()
 {
+}
+
+void IdpRouter::OnPollTimerTick ()
+{
+    IdpNode::OnPollTimerTick ();
+
+    auto it1 = _adaptors.begin ();
+
+    while (it1 != _adaptors.end ())
+    {
+        if (it1->second->IsEnumerated ())
+        {
+            auto outgoingTransaction = OutgoingTransaction ::Create (
+                static_cast<uint16_t> (NodeCommand::RouterPoll),
+                this->CreateTransactionId ());
+
+            auto adaptor = it1->second;
+
+            auto handler = [&, adaptor](std::shared_ptr<IdpResponse> response) {
+                if (response != nullptr &&
+                    response->ResponseCode () == IdpResponseCode::OK)
+                {
+                }
+                else
+                {
+                    adaptor->IsEnumerated (false);
+                }
+            };
+
+
+            Manager ().RegisterOneTimeResponseHandler (
+                outgoingTransaction->TransactionId (), handler);
+
+            auto result = it1->second->Transmit (
+                outgoingTransaction->ToPacket (Address (), RouterPollAddress));
+
+            if (!result)
+            {
+                Manager ().UnregisterOneTimeResponseHandler (
+                    outgoingTransaction->TransactionId ());
+
+                it1->second->IsEnumerated (false);
+
+                Trace::WriteLine ("Failed to router ping");
+            }
+        }
+        it1++;
+    }
 }
 
 void IdpRouter::OnReset ()
@@ -115,7 +169,6 @@ void IdpRouter::OnReset ()
             it++;
         }
     }
-
 
     auto it1 = _adaptors.begin ();
 
@@ -246,15 +299,28 @@ void IdpRouter::MarkUnenumerated (IdpNode& node)
 
 bool IdpRouter::Transmit (std::shared_ptr<IdpPacket> packet)
 {
-    Transmit (AdaptorNone, packet);
-
-    return true;
+    return Transmit (AdaptorNone, packet);
 }
 
 IdpResponseCode IdpRouter::HandleEnumerateNodesCommand (
     uint16_t source, uint16_t address,
     std::shared_ptr<OutgoingTransaction> outgoing)
 {
+    auto it = _enumeratedNodes.begin ();
+
+    while (it != _enumeratedNodes.end ())
+    {
+        if (it->second->Address () == UnassignedAddress)
+        {
+            MarkUnenumerated (*it->second);
+            it = _enumeratedNodes.erase (it);
+        }
+        else
+        {
+            it++;
+        }
+    }
+
     if (!_unenumeratedNodes.empty ())
     {
         auto& node = *_unenumeratedNodes.back ();
@@ -365,7 +431,7 @@ IAdaptor* IdpRouter::GetNextUnenumeratedAdaptor (bool reenumeration)
     return nullptr;
 }
 
-void IdpRouter::Transmit (uint16_t adaptorId, std::shared_ptr<IdpPacket> packet)
+bool IdpRouter::Transmit (uint16_t adaptorId, std::shared_ptr<IdpPacket> packet)
 {
     auto source = packet->Source ();
 
@@ -382,10 +448,10 @@ void IdpRouter::Transmit (uint16_t adaptorId, std::shared_ptr<IdpPacket> packet)
         }
     }
 
-    Route (packet);
+    return Route (packet);
 }
 
-void IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
+bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
 {
     auto destination = packet->Destination ();
     auto source = packet->Source ();
@@ -394,8 +460,8 @@ void IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
     auto command = packet->Read<uint16_t> ();
     packet->Read<uint8_t> ();
 
-    if (source != 1 && destination != 1 && command != 0xC000 &&
-        command != 0xC001)
+    if ((source >= 7 || destination >= 7) && command != 0xc000 &&
+        command != 0xc001 && command != 0xa00b)
     {
         if (command == (uint16_t) NodeCommand::Response)
         {
@@ -470,6 +536,20 @@ void IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
         {
             Route (response);
         }
+
+        return true;
+    }
+    else if (destination == RouterPollAddress &&
+             Address () != UnassignedAddress)
+    {
+        auto response = ProcessPacket (packet);
+
+        if (response != nullptr)
+        {
+            return Route (response);
+        }
+
+        return false;
     }
     else
     {
@@ -490,8 +570,10 @@ void IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
 
             if (responsePacket != nullptr)
             {
-                Route (responsePacket);
+                return Route (responsePacket);
             }
+
+            return true;
         }
         else
         {
@@ -500,14 +582,18 @@ void IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
 
             if (it != _routingTable.end ())
             {
-                _adaptors[it->second]->Transmit (packet);
+                return _adaptors[it->second]->Transmit (packet);
             }
             else if (destination != UnassignedAddress)
             {
-                // Probably safe to assume that we should transmit in same route
-                // as master?
+                // Probably safe to assume that we should transmit in same
+                // route as master?
                 Trace::WriteLine ("Packet Dropped: Unknown Route", "IdpRouter");
+                return false;
             }
         }
     }
+
+    Trace::WriteLine ("Route Failed", "IdpRouter");
+    return false;
 }

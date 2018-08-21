@@ -17,6 +17,7 @@ const Guid_t MasterGuid = Guid_t ("554C0A67-F228-47B5-8155-8C5436D533DA");
 const Guid_t RouterGuid = Guid_t ("A1EE332D-5C7C-42FE-9519-54BDAC40CF21");
 
 constexpr uint16_t UnassignedAddress = 0xFFFF;
+constexpr uint16_t RouterPollAddress = 0xFFFE;
 
 enum class NodeCommand : uint16_t
 {
@@ -32,7 +33,9 @@ enum class NodeCommand : uint16_t
     RouterEnumerateNode = 0xA007,
     RouterPrepareToEnumerateAdaptors = 0xA008,
     RouterEnumerateAdaptor = 0xA009,
-    MarkAdaptorConnected = 0xA00A
+    MarkAdaptorConnected = 0xA00A,
+
+    RouterPoll = 0xA00B
 };
 
 enum class EnumerationTarget : uint16_t
@@ -88,6 +91,8 @@ class IdpNode
                       std::shared_ptr<OutgoingTransaction> request);
 
     virtual void OnReset ();
+
+    virtual void OnPollTimerTick ();
 
     uint16_t Address ();
     void Address (uint16_t address);
