@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace IdpProtocol
 {
@@ -89,6 +91,34 @@ namespace IdpProtocol
             TransmitEndpoint = this;
 
             _nextAdaptorId = 1;
+        }
+
+        public override async Task OnPollTimerTickAsync()
+        {
+            await base.OnPollTimerTickAsync();
+
+            foreach(var adaptorEntry in _adaptors.Where(x=>x.Value.IsEnumerated))
+            {
+                var adaptor = adaptorEntry.Value;
+
+                var outgoingTransaction = OutgoingTransaction.Create((UInt16)NodeCommand.RouterPoll, CreateTransactionId());
+
+                var result = adaptor.Transmit(outgoingTransaction.ToPacket(Address, RouterPollAddress));
+
+                if(result)
+                {
+                    var response = await Manager.WaitForResponseAsync(outgoingTransaction.TransactionId, 2500);
+
+                    if(response == null || response.ResponseCode != IdpResponseCode.OK)
+                    {
+                        adaptor.IsEnumerated = false;
+                    }
+                }
+                else
+                {
+                    adaptor.IsEnumerated = false;
+                }
+            }
         }
 
         protected override void OnReset()
@@ -205,7 +235,7 @@ namespace IdpProtocol
             return _adaptors.Values.FirstOrDefault(a => !a.IsRenumerated);
         }
 
-        public void Transmit(ushort adaptorId, IdpPacket packet)
+        public bool Transmit(ushort adaptorId, IdpPacket packet)
         {
             var source = packet.Source;
 
@@ -219,7 +249,7 @@ namespace IdpProtocol
                 }
             }
 
-            Route(packet);
+            return Route(packet);
         }
 
         public bool MarkEnumerated(IdpNode node)
@@ -307,7 +337,7 @@ namespace IdpProtocol
             return result;
         }
 
-        public void Route(IdpPacket packet)
+        public bool Route(IdpPacket packet)
         {
             var destination = packet.Destination;
             var source = packet.Source;
@@ -317,7 +347,7 @@ namespace IdpProtocol
 
             packet.ResetRead();
 
-            Console.WriteLine($"Router: 0x{Address.ToString("X4")} from: 0x{source.ToString("X4")}, to: 0x{ destination.ToString("X4")} Command: 0x{ command.ToString("X4")} ({(NodeCommand)command})");
+            Debug.WriteLine($"Router: 0x{Address.ToString("X4")} from: 0x{source.ToString("X4")}, to: 0x{ destination.ToString("X4")} Command: 0x{ command.ToString("X4")} ({(NodeCommand)command})");
 
             if (destination == 0 && Address != UnassignedAddress)
             {
@@ -352,6 +382,19 @@ namespace IdpProtocol
                 {
                     Route(response);
                 }
+
+                return true;
+            }
+            else if (destination == RouterPollAddress && Address != UnassignedAddress)
+            {
+                var response = ProcessPacket(packet);
+
+                if(response != null)
+                {
+                    return Route(response);
+                }
+
+                return false;
             }
             else
             {
@@ -372,14 +415,26 @@ namespace IdpProtocol
 
                     if (responsePacket != null)
                     {
-                        Route(responsePacket);
+                        return Route(responsePacket);
                     }
+
+                    return true;
                 }
                 else
                 {
                     if (_routingTable.ContainsKey(destination))
                     {
-                        _adaptors[_routingTable[destination]].Transmit(packet);
+                        return _adaptors[_routingTable[destination]].Transmit(packet);
+                    }
+                    else
+                    {
+                        if (destination == 0xFFFF && Address != 0xFFFF)
+                        {
+                            return false;
+                        }
+
+                        // debug code only
+                        return false;
                     }
                 }
             }
@@ -387,9 +442,7 @@ namespace IdpProtocol
 
         public bool Transmit(IdpPacket packet)
         {
-            Transmit(0xFFFF, packet);
-
-            return true;
+            return Transmit(0xFFFF, packet);
         }
     }
 }

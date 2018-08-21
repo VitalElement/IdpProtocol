@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See licence.md file in the project root for full license information.
 
 using System;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,15 +23,19 @@ namespace IdpProtocol
         RouterEnumerateNode = 0xA007,
         RouterPrepareToEnumerateAdaptors = 0xA008,
         RouterEnumerateAdaptor = 0xA009,
-        MarkAdaptorConnected = 0xA00A
+        MarkAdaptorConnected = 0xA00A,
+
+        RouterPoll = 0xA00B
     };
 
     public class IdpNode
     {
         public const UInt16 UnassignedAddress = 0xFFFF;
+        public const UInt16 RouterPollAddress = 0xFFFE;
         public const UInt32 DefaultTimeoutMsec = 5000;
         private TaskCompletionSource<bool> _enumerationSource;
         private UInt32 _currentTransactionId;
+        private DateTime _lastPing = DateTime.Now;
 
         public IdpNode(Guid guid, string name, UInt16 address = UnassignedAddress)
         {
@@ -43,7 +49,15 @@ namespace IdpProtocol
 
             Enabled = true;
 
-            Manager.RegisterCommand((UInt16)NodeCommand.Ping, (i, o) => IdpResponseCode.OK);
+            Manager.RegisterResponseHandler((UInt16)NodeCommand.Ping, response =>
+            {
+                _lastPing = DateTime.Now;
+            });
+
+            Manager.RegisterCommand((UInt16)NodeCommand.Ping, (i, o) =>
+            {
+                return IdpResponseCode.OK;
+            });
 
             Manager.RegisterCommand((UInt16)NodeCommand.GetNodeInfo, (i, o) =>
             {
@@ -83,6 +97,31 @@ namespace IdpProtocol
             });
 
             _enumerationSource = new TaskCompletionSource<bool>();
+
+            Observable.Interval(TimeSpan.FromSeconds(1)).Subscribe(async _ =>
+            {
+                await OnPollTimerTickAsync();
+            });
+        }
+
+        public virtual async Task OnPollTimerTickAsync ()
+        {
+            if (Address != UnassignedAddress && Enabled)
+            {
+                var response = await SendRequestAsync(1, OutgoingTransaction.Create((UInt16)NodeCommand.Ping, CreateTransactionId()));
+
+                if (response.success && response.response != null && response.response.ResponseCode == IdpResponseCode.OK)
+                {
+                    if (DateTime.Now - _lastPing > TimeSpan.FromSeconds(4))
+                    {
+                        OnReset();
+                    }
+                }
+                else if (response.response != null || response.success == false)
+                {
+                    OnReset();
+                }
+            }
         }
 
         public UInt32 CreateTransactionId ()
@@ -151,6 +190,12 @@ namespace IdpProtocol
             {
                 _enumerationSource.SetResult(true);
             }
+        }
+
+        public void Reset ()
+        {
+            Address = UnassignedAddress;
+            _enumerationSource = new TaskCompletionSource<bool>();
         }
 
         public IPacketTransmit TransmitEndpoint { get; set; }

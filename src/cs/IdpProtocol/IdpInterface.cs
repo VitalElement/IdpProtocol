@@ -18,6 +18,8 @@ namespace IdpProtocol
         private Stream _inputStream;
         private Stream _outputStream;
 
+        public event EventHandler ConnectionError;
+
         public StreamAdaptor(IScheduler scheduler) : this(scheduler, new SimplePipeStream(), new SimplePipeStream())
         {
             IsActive = true;
@@ -55,11 +57,18 @@ namespace IdpProtocol
                 IsActive = true;
                 Task.Run(async () =>
                 {
-                    while (!_isDisposing)
+                    try
                     {
-                        _parser.Parse();
+                        while (!_isDisposing)
+                        {
+                            _parser.Parse();
 
-                        await Task.Delay(1);
+                            await Task.Delay(1);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        ConnectionError?.Invoke(this, EventArgs.Empty);
                     }
                 });
             }
@@ -69,8 +78,17 @@ namespace IdpProtocol
         {
             if (OutputStream != null)
             {
-                OutputStream.Write(packet.Data, 0, packet.Data.Length);
-                OutputStream.Flush();
+                try
+                {
+                    OutputStream.Write(packet.Data, 0, packet.Data.Length);
+                    OutputStream.Flush();
+                }
+                catch (Exception e)
+                {
+                    ConnectionError?.Invoke(this, EventArgs.Empty);
+                    return false;
+                }
+
 
                 return true;
             }

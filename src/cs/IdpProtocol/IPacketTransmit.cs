@@ -12,6 +12,6 @@ namespace IdpProtocol
 
     public interface IAdaptorToRouterPort
     {
-        void Transmit(UInt16 adaptorId, IdpPacket packet);
+        bool Transmit(UInt16 adaptorId, IdpPacket packet);
     }
 }
