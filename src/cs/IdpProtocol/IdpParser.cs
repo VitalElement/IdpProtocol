@@ -19,7 +19,12 @@ namespace IdpProtocol
 
             while (read < length)
             {
-                read += stream.Read(data, read, data.Length - read);
+                var currentRead = stream.Read(data, read, data.Length - read);
+
+                if(currentRead > 0)
+                {
+                    read += currentRead;
+                }
 
                 if (read < length)
                 {
