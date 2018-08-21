@@ -1,38 +1,38 @@
 {
   "References": [
     {
-      "Name": "CatchTestFramework"
+      "name": "CatchTestFramework"
     },
     {
-      "Name": "CommonHal"
+      "name": "CommonHal"
     },
     {
-      "Name": "IdpProtocol2"
+      "name": "IdpProtocol2"
     }
   ],
   "Toolchain": "AvalonStudio.Toolchains.LocalGCC.LocalGCCToolchain",
   "Debugger2": "AvalonStudio.Debuggers.GDB.Local.LocalGdbDebugger",
-  "ExcludedFiles": [
+  "excludedFiles": [
     "build"
   ],
-  "Type": "Executable",
-  "Includes": [
+  "type": "Executable",
+  "includes": [
     {
-      "Value": "./",
-      "Exported": true,
-      "Global": false
+      "value": "./",
+      "exported": true,
+      "global": false
     }
   ],
-  "Defines": [
+  "defines": [
     {
-      "Value": "DEBUG",
-      "Exported": false,
-      "Global": true
+      "value": "DEBUG",
+      "exported": false,
+      "global": true
     }
   ],
-  "StaticLibraries": [],
-  "Executable": "build/bin/IdpProtcocol.UnitTests.exe",
-  "ToolchainSettings": {
+  "staticLibraries": [],
+  "executable": "build/bin/IdpProtcocol.UnitTests.exe",
+  "toolchainSettings": {
     "AvalonStudio.Toolchains.GCC.GccToolchainSettings": {
       "CompileSettings": {
         "Defines": [],
@@ -69,8 +69,8 @@
       }
     }
   },
-  "DebugSettings": {},
-  "Settings": {
+  "debugSettings": {},
+  "settings": {
     "AvalonStudio.Projects.CPlusPlus.BuildEventsSettings": {}
   }
 }

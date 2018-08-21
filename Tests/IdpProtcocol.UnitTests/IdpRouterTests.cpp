@@ -352,7 +352,7 @@ TEST_CASE ("MegaNetwork Enumerates")
     REQUIRE (nodeInfo.Parent->Address == router3.Address ());
 }
 
-TEST_CASE ("Nodes can be polled")
+TEST_CASE ("Nodes poll master")
 {
     TestRuntime::Initialise ();
 
@@ -387,44 +387,47 @@ TEST_CASE ("Nodes can be polled")
 
     REQUIRE_FALSE (masterNode.IsEnumerating ());
 
-    TestRuntime::IterateRuntime (100);
+    TestRuntime::IterateRuntime (1100);
+    TestRuntime::IterateRuntime (0, 1000);
 
     masterNode.PollNetwork ();
 
-    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (remoteNode1.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (remoteNode2.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (router.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (router2.Address ()).LastSeen == 100);
+    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (remoteNode1.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (remoteNode2.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (router.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (router2.Address ()).LastSeen == 1100);
 
     childNode2.Enabled (false);
     remoteNode2.Enabled (false);
 
-    TestRuntime::IterateRuntime (100);
+    TestRuntime::IterateRuntime (1100);
+    TestRuntime::IterateRuntime (0, 1000);
 
     masterNode.PollNetwork ();
 
-    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 200);
-    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (remoteNode1.Address ()).LastSeen == 200);
-    REQUIRE (masterNode.GetNodeInfo (remoteNode2.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (router.Address ()).LastSeen == 200);
-    REQUIRE (masterNode.GetNodeInfo (router2.Address ()).LastSeen == 200);
+    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 2200);
+    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (remoteNode1.Address ()).LastSeen == 2200);
+    REQUIRE (masterNode.GetNodeInfo (remoteNode2.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (router.Address ()).LastSeen == 2200);
+    REQUIRE (masterNode.GetNodeInfo (router2.Address ()).LastSeen == 2200);
 
     childNode2.Enabled (true);
     remoteNode2.Enabled (true);
 
-    TestRuntime::IterateRuntime (100);
+    TestRuntime::IterateRuntime (1100);
+    TestRuntime::IterateRuntime (0, 1000);
 
     masterNode.PollNetwork ();
 
-    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 300);
-    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 300);
-    REQUIRE (masterNode.GetNodeInfo (remoteNode1.Address ()).LastSeen == 300);
-    REQUIRE (masterNode.GetNodeInfo (remoteNode2.Address ()).LastSeen == 300);
-    REQUIRE (masterNode.GetNodeInfo (router.Address ()).LastSeen == 300);
-    REQUIRE (masterNode.GetNodeInfo (router2.Address ()).LastSeen == 300);
+    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 3300);
+    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 3300);
+    REQUIRE (masterNode.GetNodeInfo (remoteNode1.Address ()).LastSeen == 3300);
+    REQUIRE (masterNode.GetNodeInfo (remoteNode2.Address ()).LastSeen == 3300);
+    REQUIRE (masterNode.GetNodeInfo (router.Address ()).LastSeen == 3300);
+    REQUIRE (masterNode.GetNodeInfo (router2.Address ()).LastSeen == 3300);
 }
 
 TEST_CASE ("Master times out nodes that dont respond to polling")
@@ -463,36 +466,36 @@ TEST_CASE ("Master times out nodes that dont respond to polling")
 
     masterNode.TraceNetworkTree ();
 
-    TestRuntime::IterateRuntime (100);
+    TestRuntime::IterateRuntime (1100);
+    TestRuntime::IterateRuntime (0, 1000);
 
     masterNode.PollNetwork ();
 
-    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (remoteNode1.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (remoteNode2.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (router.Address ()).LastSeen == 100);
-    REQUIRE (masterNode.GetNodeInfo (router2.Address ()).LastSeen == 100);
+    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (remoteNode1.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (remoteNode2.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (router.Address ()).LastSeen == 1100);
+    REQUIRE (masterNode.GetNodeInfo (router2.Address ()).LastSeen == 1100);
 
+    auto child2Address = childNode2.Address ();
     childNode2.Enabled (false);
 
     TestRuntime::IterateRuntime (2500);
 
     masterNode.PollNetwork ();
 
-    TestRuntime::IterateRuntime (2500);
+    TestRuntime::IterateRuntime (2600);
 
     masterNode.PollNetwork ();
 
+    TestRuntime::IterateRuntime (0, 1000);
+
     REQUIRE (masterNode.HasNode (childNode1.Address ()));
-    REQUIRE_FALSE (masterNode.HasNode (childNode2.Address ()));
-    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 5100);
+    REQUIRE_FALSE (masterNode.HasNode (child2Address));
+    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 6200);
 
     masterNode.TraceNetworkTree ();
-
-    router.RemoveNode (childNode2);
-
-    router2.AddNode (childNode2);
     childNode2.Enabled (true);
 
     masterNode.EnumerateNetwork ();
@@ -505,7 +508,86 @@ TEST_CASE ("Master times out nodes that dont respond to polling")
 
     masterNode.PollNetwork ();
 
-    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 5100);
+    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 6200);
+}
+
+TEST_CASE ("Able to enumerate nodes that have addresses assigned to a previous "
+           "session")
+{
+    TestRuntime::Initialise ();
+
+    TestRuntime::IterateRuntime (10000);
+
+    auto& masterNode = *new MasterNode ();
+    auto& router = *new IdpRouter ();
+    auto& router2 = *new IdpRouter ();
+
+    auto& childNode1 = *new IdpNode (TestGuid, "Child.Node.1");
+    auto& childNode2 = *new IdpNode (TestGuid, "Child.Node.2");
+
+    router.AddNode (masterNode);
+    router.AddNode (childNode1);
+    router2.AddNode (childNode2);
+
+    auto& adaptor1 = *new SimpleAdaptor ();
+    auto& adaptor2 = *new SimpleAdaptor ();
+
+    router.AddAdaptor (adaptor1);
+    router2.AddAdaptor (adaptor2);
+
+    adaptor1.SetRemote (adaptor2);
+    adaptor2.SetRemote (adaptor1);
+
+    masterNode.EnumerateNetwork ();
+
+    REQUIRE_FALSE (masterNode.IsEnumerating ());
+
+    masterNode.TraceNetworkTree ();
+
+    TestRuntime::IterateRuntime (1100);
+    TestRuntime::IterateRuntime (0, 1000);
+
+    masterNode.PollNetwork ();
+
+    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 11100);
+    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 11100);
+    REQUIRE (masterNode.GetNodeInfo (router.Address ()).LastSeen == 11100);
+    REQUIRE (masterNode.GetNodeInfo (router2.Address ()).LastSeen == 11100);
+
+    auto child2Address = childNode2.Address ();
+
+    masterNode.GetNodeInfo (child2Address).LastSeen -= 6000;
+    masterNode.GetNodeInfo (router2.Address ()).LastSeen -= 6000;
+    masterNode.PollNetwork ();
+
+    masterNode.EnumerateNetwork ();
+
+    TestRuntime::IterateRuntime (2500);
+
+    masterNode.EnumerateNetwork ();
+
+    masterNode.PollNetwork ();
+
+    TestRuntime::IterateRuntime (2600);
+
+    masterNode.PollNetwork ();
+
+    TestRuntime::IterateRuntime (2000, 1000);
+
+    masterNode.PollNetwork ();
+    masterNode.EnumerateNetwork ();
+
+    masterNode.PollNetwork ();
+    masterNode.EnumerateNetwork ();
+
+    TestRuntime::IterateRuntime (2000, 1000);
+    TestRuntime::IterateRuntime (0, 1000);
+
+    REQUIRE (masterNode.HasNode (childNode1.Address ()));
+    REQUIRE (masterNode.HasNode (child2Address));
+    REQUIRE (masterNode.GetNodeInfo (childNode1.Address ()).LastSeen == 20200);
+
+    masterNode.TraceNetworkTree ();
 }
 
 TEST_CASE ("Master queries nodes for Node Info")
@@ -792,6 +874,7 @@ TEST_CASE ("Network is reenumerated following collapse")
 
     TestRuntime::IterateRuntime (10000);
     TestRuntime::IterateRuntime (1000);
+    TestRuntime::IterateRuntime (0, 1000);
 
     masterNode.EnumerateNetwork ();
 
