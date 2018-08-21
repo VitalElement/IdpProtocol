@@ -69,10 +69,37 @@ bool NotifyingStreamAdaptor::Transmit (std::shared_ptr<IdpPacket> packet)
         auto data = packet->Data ();
         auto length = packet->Length ();
         uint32_t sent = 0;
+        int retries = 0;
 
         while (sent < length)
         {
-            sent = _connection->Write (data + sent, length - sent);
+            auto currentSend = _connection->Write (data + sent, length - sent);
+
+            if (currentSend == -1 || !_connection->IsValid ())
+            {
+                Trace::WriteLine ("Transmit Failed",
+                                  "Notifying Stream Adaptor");
+
+                return false;
+            }
+            else
+            {
+                if (currentSend == 0)
+                {
+                    retries++;
+
+                    if (retries > 100)
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    retries = 0;
+                }
+
+                sent += currentSend;
+            }
         }
 
         return true;
