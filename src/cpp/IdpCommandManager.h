@@ -43,7 +43,7 @@ class IdpCommandManager
 
     void RegisterOneTimeResponseHandler (uint32_t transactionId,
                                          ResponseHandler handler,
-                                         uint32_t timeoutMs = 200);
+                                         uint32_t timeoutMs = 1750);
 
     void UnregisterOneTimeResponseHandler (uint32_t transactionId);
 
