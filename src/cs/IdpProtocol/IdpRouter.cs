@@ -347,7 +347,7 @@ namespace IdpProtocol
 
             packet.ResetRead();
 
-            Debug.WriteLine($"Router: 0x{Address.ToString("X4")} from: 0x{source.ToString("X4")}, to: 0x{ destination.ToString("X4")} Command: 0x{ command.ToString("X4")} ({(NodeCommand)command})");
+            //Debug.WriteLine($"Router: 0x{Address.ToString("X4")} from: 0x{source.ToString("X4")}, to: 0x{ destination.ToString("X4")} Command: 0x{ command.ToString("X4")} ({(NodeCommand)command})");
 
             if (destination == 0 && Address != UnassignedAddress)
             {
