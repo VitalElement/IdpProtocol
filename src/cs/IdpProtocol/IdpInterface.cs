@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IdpProtocol
@@ -55,7 +56,8 @@ namespace IdpProtocol
             {
                 _isStarted = true;
                 IsActive = true;
-                Task.Run(async () =>
+
+                var thread = new Thread(async () =>
                 {
                     try
                     {
@@ -71,6 +73,9 @@ namespace IdpProtocol
                         ConnectionError?.Invoke(this, EventArgs.Empty);
                     }
                 });
+
+                thread.Priority = ThreadPriority.AboveNormal;
+                thread.Start();
             }
         }
 
