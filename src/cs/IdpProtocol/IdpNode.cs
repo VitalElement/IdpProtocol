@@ -5,6 +5,7 @@ using System;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IdpProtocol
@@ -98,7 +99,7 @@ namespace IdpProtocol
 
             _enumerationSource = new TaskCompletionSource<bool>();
 
-            Observable.Interval(TimeSpan.FromSeconds(1)).Subscribe(async _ =>
+            Observable.Interval(TimeSpan.FromSeconds(1)).ObserveOn(CurrentThreadScheduler.Instance).Subscribe(async _ =>
             {
                 await OnPollTimerTickAsync();
             });
@@ -108,9 +109,9 @@ namespace IdpProtocol
         {
             if (Address != UnassignedAddress && Enabled)
             {
-                var response = await SendRequestAsync(1, OutgoingTransaction.Create((UInt16)NodeCommand.Ping, CreateTransactionId()));
+                SendRequest(1, OutgoingTransaction.Create((UInt16)NodeCommand.Ping, CreateTransactionId(), IdpCommandFlags.None));
 
-                if (response.success && response.response != null && response.response.ResponseCode == IdpResponseCode.OK)
+                /*if (response.success && response.response != null && response.response.ResponseCode == IdpResponseCode.OK)
                 {
                     if (DateTime.Now - _lastPing > TimeSpan.FromSeconds(4))
                     {
@@ -120,7 +121,7 @@ namespace IdpProtocol
                 else if (response.response != null || response.success == false)
                 {
                     OnReset();
-                }
+                }*/
             }
         }
 

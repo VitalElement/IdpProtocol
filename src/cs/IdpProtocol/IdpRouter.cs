@@ -93,7 +93,7 @@ namespace IdpProtocol
             _nextAdaptorId = 1;
         }
 
-        public override async Task OnPollTimerTickAsync()
+        /*public override async Task OnPollTimerTickAsync()
         {
             await base.OnPollTimerTickAsync();
 
@@ -119,7 +119,7 @@ namespace IdpProtocol
                     adaptor.IsEnumerated = false;
                 }
             }
-        }
+        }*/
 
         protected override void OnReset()
         {
