@@ -28,6 +28,16 @@ IdpClientNode::IdpClientNode (Guid_t guid, const char* name, uint16_t address)
 
             return IdpResponseCode::OK;
         });
+
+    Manager ().RegisterResponseHandler (
+        static_cast<uint16_t> (NodeCommand::QueryInterface),
+        [&](std::shared_ptr<IdpResponse> response) {
+            if (response->ResponseCode () == IdpResponseCode::OK &&
+                _clientAddress == UnassignedAddress)
+            {
+                _clientAddress = response->Transaction ()->Source ();
+            }
+        });
 }
 
 IdpClientNode::~IdpClientNode ()
@@ -42,4 +52,12 @@ bool IdpClientNode::IsClientConnected ()
 uint16_t IdpClientNode::ClientAddress ()
 {
     return _clientAddress;
+}
+
+void IdpClientNode::QueryInterface (Guid_t guid)
+{
+    SendRequest (0, OutgoingTransaction::Create (
+                        (uint16_t) NodeCommand::QueryInterface,
+                        CreateTransactionId (), IdpCommandFlags::None)
+                        ->WriteGuid (guid));
 }
