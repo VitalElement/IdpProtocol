@@ -5,9 +5,9 @@
  *
  ******************************************************************************/
 
-#include "IdpClientNode.h"
+#include "IdpServerNode.h"
 
-IdpClientNode::IdpClientNode (Guid_t guid, const char* name, uint16_t address)
+IdpServerNode::IdpServerNode (Guid_t guid, const char* name, uint16_t address)
     : IdpNode (guid, name, address)
 {
     _clientAddress = UnassignedAddress;
@@ -40,21 +40,21 @@ IdpClientNode::IdpClientNode (Guid_t guid, const char* name, uint16_t address)
         });
 }
 
-IdpClientNode::~IdpClientNode ()
+IdpServerNode::~IdpServerNode ()
 {
 }
 
-bool IdpClientNode::IsClientConnected ()
+bool IdpServerNode::IsClientConnected ()
 {
     return _clientAddress != UnassignedAddress;
 }
 
-uint16_t IdpClientNode::ClientAddress ()
+uint16_t IdpServerNode::ClientAddress ()
 {
     return _clientAddress;
 }
 
-void IdpClientNode::QueryInterface (Guid_t guid)
+void IdpServerNode::QueryInterface (Guid_t guid)
 {
     SendRequest (0, OutgoingTransaction::Create (
                         (uint16_t) NodeCommand::QueryInterface,

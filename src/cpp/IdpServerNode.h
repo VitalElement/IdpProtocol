@@ -19,7 +19,7 @@ enum class ClientCommand
 /**
  *  IdpClientNode
  */
-class IdpClientNode : public IdpNode
+class IdpServerNode : public IdpNode
 {
     uint16_t _clientAddress;
 
@@ -27,10 +27,10 @@ class IdpClientNode : public IdpNode
     /**
      * Instantiates a new instance of IdpClientNode
      */
-    IdpClientNode (Guid_t guid, const char* name,
+    IdpServerNode (Guid_t guid, const char* name,
                    uint16_t address = UnassignedAddress);
 
-    virtual ~IdpClientNode ();
+    virtual ~IdpServerNode ();
 
   protected:
     bool IsClientConnected ();

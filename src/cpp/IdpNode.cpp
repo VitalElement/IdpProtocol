@@ -111,6 +111,10 @@ uint32_t IdpNode::CreateTransactionId ()
     return _currentTransactionId++;
 }
 
+void IdpNode::OnAddressAssigned (uint16_t address)
+{
+}
+
 void IdpNode::OnReset ()
 {
     this->Address (UnassignedAddress);
@@ -167,17 +171,22 @@ uint16_t IdpNode::Address ()
 
 void IdpNode::Address (uint16_t address)
 {
-    _address = address;
-
-    if (address != UnassignedAddress && address != 0x0001)
+    if (address != _address)
     {
-        _lastPing = Application::GetApplicationTime ();
+        _address = address;
 
-        _pingTimer->Start ();
-    }
-    else
-    {
-        _pingTimer->Stop ();
+        if (address != UnassignedAddress && address != 0x0001)
+        {
+            _lastPing = Application::GetApplicationTime ();
+
+            _pingTimer->Start ();
+        }
+        else
+        {
+            _pingTimer->Stop ();
+        }
+
+        OnAddressAssigned (address);
     }
 }
 

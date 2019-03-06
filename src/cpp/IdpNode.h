@@ -90,6 +90,8 @@ class IdpNode
     bool SendRequest (uint16_t source, uint16_t destination,
                       std::shared_ptr<OutgoingTransaction> request);
 
+    virtual void OnAddressAssigned (uint16_t address);
+
     virtual void OnReset ();
 
     virtual void OnPollTimerTick ();
