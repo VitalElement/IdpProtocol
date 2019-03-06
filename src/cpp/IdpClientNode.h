@@ -6,33 +6,30 @@
  *******************************************************************************/
 #pragma once
 
+#include "DispatcherTimer.h"
 #include "IdpNode.h"
 #include <stdbool.h>
 #include <stdint.h>
 
-enum class ClientCommand
-{
-    Connect = 0xD000,
-    Disconnect
-};
-
 /**
  *  IdpClientNode
  */
-class IdpServerNode : public IdpNode
+class IdpClientNode : IdpNode
 {
-    uint16_t _clientAddress;
+    uint64_t _lastPing;
+    uint16_t _serverAddress;
+    DispatcherTimer* _pollTimer;
+    Guid_t _serverGuid;
 
   public:
     /**
      * Instantiates a new instance of IdpClientNode
      */
-    IdpServerNode (Guid_t guid, const char* name,
+    IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
                    uint16_t address = UnassignedAddress);
 
-    virtual ~IdpServerNode ();
+    virtual ~IdpClientNode ();
 
-  protected:
-    bool IsClientConnected ();
-    uint16_t ClientAddress ();
+  private:
+    void QueryInterface (Guid_t guid);
 };
