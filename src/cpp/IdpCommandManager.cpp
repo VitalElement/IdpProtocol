@@ -16,31 +16,30 @@ IdpCommandManager::IdpCommandManager ()
             auto response =
                 std::shared_ptr<IdpResponse> (new IdpResponse (incoming));
 
-            auto it = _responseHandlers.find (response->ResponseId ());
+            auto it = _transactionHandlers.find (response->TransactionId ());
 
-            if (it != _responseHandlers.end ())
+            if (it != _transactionHandlers.end ())
             {
-                auto current = it->second;
+                auto current = _transactionHandlers[response->TransactionId ()];
 
-                current (response);
+                _transactionHandlers.erase (it);
+
+                current.handler (response);
             }
             else
             {
-                auto it =
-                    _transactionHandlers.find (response->TransactionId ());
+                auto it = _responseHandlers.find (response->ResponseId ());
 
-                if (it != _transactionHandlers.end ())
+                if (it != _responseHandlers.end ())
                 {
-                    auto current =
-                        _transactionHandlers[response->TransactionId ()];
+                    auto current = it->second;
 
-                    _transactionHandlers.erase (it);
-
-                    current.handler (response);
+                    current (response);
                 }
-            }
 
-            return IdpResponseCode::OK;
+
+                return IdpResponseCode::OK;
+            }
         });
 
     auto& pollTimer = *new DispatcherTimer (10);
