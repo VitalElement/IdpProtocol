@@ -32,6 +32,11 @@ class IdpClientNode : public IdpNode
 
     void Connect ();
 
+    bool SendRequest (std::shared_ptr<OutgoingTransaction> request,
+                      ResponseHandler handler);
+
+    bool SendRequest (std::shared_ptr<OutgoingTransaction> request);
+
     Event Connected;
     Event Disconnected;
 

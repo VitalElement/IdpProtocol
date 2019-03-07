@@ -37,8 +37,7 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
             }
             else
             {
-                if (!this->SendRequest (
-                        _serverAddress,
+                if (!SendRequest (
                         OutgoingTransaction ::Create (
                             static_cast<uint16_t> (NodeCommand::Ping),
                             this->CreateTransactionId ()),
@@ -59,6 +58,31 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
 
 IdpClientNode::~IdpClientNode ()
 {
+}
+
+bool IdpClientNode::SendRequest (std::shared_ptr<OutgoingTransaction> request,
+                                 ResponseHandler handler)
+{
+    if (IsConnected ())
+    {
+        return IdpNode::SendRequest (_serverAddress, request, handler);
+    }
+    else
+    {
+        return false;
+    }
+}
+
+bool IdpClientNode::SendRequest (std::shared_ptr<OutgoingTransaction> request)
+{
+    if (IsConnected ())
+    {
+        return IdpNode::SendRequest (_serverAddress, request);
+    }
+    else
+    {
+        return false;
+    }
 }
 
 void IdpClientNode::OnConnect (uint16_t serverAddress)
@@ -105,17 +129,18 @@ bool IdpClientNode::IsConnected ()
 
 void IdpClientNode::QueryInterface (Guid_t guid)
 {
-    SendRequest (0,
-                 OutgoingTransaction::Create (
-                     (uint16_t) NodeCommand::QueryInterface,
-                     CreateTransactionId (), IdpCommandFlags::None)
-                     ->WriteGuid (guid),
-                 [&](std::shared_ptr<IdpResponse> response) {
-                     if (response != nullptr &&
-                         response->ResponseCode () == IdpResponseCode::OK &&
-                         _serverAddress == UnassignedAddress)
-                     {
-                         OnConnect (response->Transaction ()->Source ());
-                     }
-                 });
+    IdpNode::SendRequest (
+        0,
+        OutgoingTransaction::Create ((uint16_t) NodeCommand::QueryInterface,
+                                     CreateTransactionId (),
+                                     IdpCommandFlags::None)
+            ->WriteGuid (guid),
+        [&](std::shared_ptr<IdpResponse> response) {
+            if (response != nullptr &&
+                response->ResponseCode () == IdpResponseCode::OK &&
+                _serverAddress == UnassignedAddress)
+            {
+                OnConnect (response->Transaction ()->Source ());
+            }
+        });
 }
