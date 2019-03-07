@@ -36,10 +36,9 @@ IdpCommandManager::IdpCommandManager ()
 
                     current (response);
                 }
-
-
-                return IdpResponseCode::OK;
             }
+
+            return IdpResponseCode::OK;
         });
 
     auto& pollTimer = *new DispatcherTimer (10);
