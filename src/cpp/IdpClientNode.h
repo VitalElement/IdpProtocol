@@ -14,7 +14,7 @@
 /**
  *  IdpClientNode
  */
-class IdpClientNode : IdpNode
+class IdpClientNode : public IdpNode
 {
     uint64_t _lastPing;
     uint16_t _serverAddress;
