@@ -30,6 +30,16 @@ class IdpClientNode : IdpNode
 
     virtual ~IdpClientNode ();
 
+    void Connect ();
+
+    Event Connected;
+    Event Disconnected;
+
+  protected:
+    bool IsConnected ();
+
   private:
     void QueryInterface (Guid_t guid);
+    void OnDisconnect ();
+    void OnConnect (uint16_t serverAddress);
 };

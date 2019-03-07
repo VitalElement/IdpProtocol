@@ -29,6 +29,7 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
 
             if (elapsedTime > 4000)
             {
+                OnDisconnect ();
             }
             else
             {
@@ -36,8 +37,16 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
                         _serverAddress,
                         OutgoingTransaction ::Create (
                             static_cast<uint16_t> (NodeCommand::Ping),
-                            this->CreateTransactionId ())))
+                            this->CreateTransactionId ()),
+                        [&](std::shared_ptr<IdpResponse> response) {
+                            if (response->ResponseCode () ==
+                                IdpResponseCode::OK)
+                            {
+                                _lastPing = Application::GetApplicationTime ();
+                            }
+                        }))
                 {
+                    OnDisconnect ();
                 }
             }
         }
@@ -46,6 +55,38 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
 
 IdpClientNode::~IdpClientNode ()
 {
+}
+
+void IdpClientNode::OnConnect (uint16_t serverAddress)
+{
+    if (_serverAddress == UnassignedAddress)
+    {
+        _serverAddress = serverAddress;
+
+        Connected (this, EventArgs::Empty);
+    }
+}
+
+void IdpClientNode::OnDisconnect ()
+{
+    if (_serverAddress != UnassignedAddress)
+    {
+        _serverAddress = UnassignedAddress;
+
+        Disconnected (this, EventArgs::Empty);
+    }
+}
+
+void IdpClientNode::Connect ()
+{
+    QueryInterface (_serverGuid);
+
+    _pollTimer->Start ();
+}
+
+bool IdpClientNode::IsConnected ()
+{
+    return _serverAddress != UnassignedAddress;
 }
 
 void IdpClientNode::QueryInterface (Guid_t guid)
@@ -59,7 +100,7 @@ void IdpClientNode::QueryInterface (Guid_t guid)
                      if (response->ResponseCode () == IdpResponseCode::OK &&
                          _serverAddress == UnassignedAddress)
                      {
-                         _serverAddress = response->Transaction ()->Source ();
+                         OnConnect (response->Transaction ()->Source ());
                      }
                  });
 }
