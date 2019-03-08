@@ -42,8 +42,9 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
                             static_cast<uint16_t> (NodeCommand::Ping),
                             this->CreateTransactionId ()),
                         [&](std::shared_ptr<IdpResponse> response) {
-                            if (response->ResponseCode () ==
-                                IdpResponseCode::OK)
+                            if (response != nullptr &&
+                                response->ResponseCode () ==
+                                    IdpResponseCode::OK)
                             {
                                 _lastPing = Application::GetApplicationTime ();
                             }
