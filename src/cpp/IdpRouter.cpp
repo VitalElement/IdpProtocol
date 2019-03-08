@@ -458,9 +458,17 @@ bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
 
     packet->ResetReadToPayload ();
     auto command = packet->Read<uint16_t> ();
+
+    auto transactionId = packet->Read<uint32_t> ();
     packet->Read<uint8_t> ();
 
-    if ((source >= 7 || destination >= 7) && command != 0xc000 &&
+
+    if (source == UnassignedAddress)
+    {
+        return false;
+    }
+
+    if ((source >= 9 || destination >= 9) && command != 0xc000 &&
         command != 0xc001 && command != 0xa00b)
     {
         if (command == (uint16_t) NodeCommand::Response)
@@ -470,16 +478,18 @@ bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
 
             Trace::Write (
                 "R:0x%04x S:0x%04x D:0x%04x "
-                "C:0x%04x <%s ",
+                "C:0x%04x I:0x%04x<%s ",
                 "IdpRouter", Address (), source, destination, command,
+                transactionId,
                 IdpNode::GetNodeCommandDescription ((NodeCommand) response));
         }
         else
         {
             Trace::Write (
                 "R:0x%04x S:0x%04x D:0x%04x "
-                "C:0x%04x >%s ",
+                "C:0x%04x I:0x%04x>%s ",
                 "IdpRouter", Address (), source, destination, command,
+                transactionId,
                 IdpNode::GetNodeCommandDescription ((NodeCommand) command));
         }
 
@@ -559,7 +569,7 @@ bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
         {
             node = this;
         }
-        else
+        else if (Address () != UnassignedAddress)
         {
             node = FindNode (packet->Destination ());
         }
@@ -577,12 +587,16 @@ bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
         }
         else
         {
-            // todo find adaptor with that node.
             auto it = _routingTable.find (destination);
 
             if (it != _routingTable.end ())
             {
-                return _adaptors[it->second]->Transmit (packet);
+                auto receivedOn = _routingTable.find (source);
+
+                if (receivedOn != it) // not sure if this is correct.
+                {
+                    return _adaptors[it->second]->Transmit (packet);
+                }
             }
             else if (destination != UnassignedAddress)
             {
