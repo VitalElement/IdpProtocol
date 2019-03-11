@@ -24,7 +24,7 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
     _pollTimer->Tick += [&](auto sender, auto& e) {
         if (_serverAddress == UnassignedAddress)
         {
-            QueryInterface (_serverGuid);
+            this->QueryInterface (_serverGuid);
         }
         else
         {
@@ -32,12 +32,12 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
 
             if (elapsedTime > 4000)
             {
-                OnDisconnect ();
+                this->OnDisconnect ();
                 _lastPing = Application::GetApplicationTime ();
             }
             else
             {
-                if (!SendRequest (
+                if (!this->SendRequest (
                         OutgoingTransaction ::Create (
                             static_cast<uint16_t> (NodeCommand::Ping),
                             this->CreateTransactionId ()),
@@ -50,7 +50,7 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
                             }
                         }))
                 {
-                    OnDisconnect ();
+                    this->OnDisconnect ();
                 }
             }
         }
