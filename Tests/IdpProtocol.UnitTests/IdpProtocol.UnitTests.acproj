@@ -24,15 +24,8 @@
       "global": false
     }
   ],
-  "defines": [
-    {
-      "value": "DEBUG",
-      "exported": false,
-      "global": true
-    }
-  ],
   "staticLibraries": [],
-  "executable": "build/bin/IdpProtcocol.UnitTests.exe",
+  "executable": "build/bin/IdpProtocol.UnitTests.exe",
   "toolchainSettings": {
     "AvalonStudio.Toolchains.GCC.GccToolchainSettings": {
       "CompileSettings": {
