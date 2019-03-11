@@ -10,6 +10,7 @@
       "name": "IdpProtocol2"
     }
   ],
+  "TestFramework": "AvalonStudio.TestFrameworks.Catch.CatchTestFramework",
   "Toolchain": "AvalonStudio.Toolchains.LocalGCC.LocalGCCToolchain",
   "Debugger2": "AvalonStudio.Debuggers.GDB.Local.LocalGdbDebugger",
   "excludedFiles": [
