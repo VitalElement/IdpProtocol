@@ -10,7 +10,7 @@
       "name": "IdpProtocol2"
     }
   ],
-  "Toolchain": "AvalonStudio.Toolchains.LocalGCC.LocalGCCToolchain",
+  "Toolchain": "AvalonStudio.Toolchains.PublishedGCC.PublishedGCCToolchain",
   "Debugger2": "AvalonStudio.Debuggers.GDB.Local.LocalGdbDebugger",
   "TestFramework": "AvalonStudio.TestFrameworks.Catch.CatchTestFramework",
   "excludedFiles": [
@@ -28,39 +28,43 @@
   "executable": "build/bin/IdpProtocol.UnitTests.exe",
   "toolchainSettings": {
     "AvalonStudio.Toolchains.GCC.GccToolchainSettings": {
-      "CompileSettings": {
-        "Defines": [],
-        "Includes": [],
-        "CompileExtensions": [],
-        "AssembleExtensions": [],
-        "DebugInformation": true,
-        "Rtti": true,
-        "Exceptions": true,
-        "CustomFlags": "-Wno-unknown-pragmas",
-        "CLanguageStandard": "Default",
-        "CppLanguageStandard": "Cpp14",
-        "Optimization": "None",
-        "Fpu": "None"
+      "compileSettings": {
+        "defines": [],
+        "includes": [],
+        "compileExtensions": [],
+        "assembleExtensions": [],
+        "debugInformation": true,
+        "rtti": true,
+        "exceptions": true,
+        "customFlags": "-Wno-unknown-pragmas",
+        "cLanguageStandard": "Default",
+        "cppLanguageStandard": "Cpp14",
+        "optimization": "None",
+        "fpu": "None"
       },
-      "LinkSettings": {
-        "LinkedLibraries": [],
-        "LinkerScripts": [],
-        "SystemLibraries": [],
-        "UseMemoryLayout": false,
-        "DiscardUnusedSections": false,
-        "NotUseStandardStartupFiles": false,
-        "Library": "None",
-        "SelectedDeviceId": 0,
-        "InRom1Start": 0,
-        "InRom1Size": 0,
-        "InRom2Start": 0,
-        "InRom2Size": 0,
-        "InRam1Start": 0,
-        "InRam1Size": 0,
-        "InRam2Start": 0,
-        "InRam2Size": 0,
-        "DebugInRam": false
+      "linkSettings": {
+        "linkedLibraries": [],
+        "linkerScripts": [],
+        "systemLibraries": [],
+        "useMemoryLayout": false,
+        "discardUnusedSections": false,
+        "notUseStandardStartupFiles": false,
+        "library": "None",
+        "selectedDeviceId": 0,
+        "inRom1Start": 0,
+        "inRom1Size": 0,
+        "inRom2Start": 0,
+        "inRom2Size": 0,
+        "inRam1Start": 0,
+        "inRam1Size": 0,
+        "inRam2Start": 0,
+        "inRam2Size": 0,
+        "debugInRam": false
       }
+    },
+    "AvalonStudio.Toolchains.PublishedGCC.PublishedGCCToolchainSettings": {
+      "toolchain": "gcc",
+      "version": "5.3.0.0"
     }
   },
   "debugSettings": {},
