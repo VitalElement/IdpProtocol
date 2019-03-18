@@ -35,7 +35,4 @@ class IdpServerNode : public IdpNode
   protected:
     bool IsClientConnected ();
     uint16_t ClientAddress ();
-
-  private:
-    void QueryInterface (Guid_t guid);
 };

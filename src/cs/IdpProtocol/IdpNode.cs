@@ -206,7 +206,7 @@ namespace IdpProtocol
         public bool Enabled { get; set; }
 
         public Guid Guid { get; }
-        public UInt16 Address { get; internal set; }
+        public UInt16 Address { get; set; }
 
         public string Name { get; }
 

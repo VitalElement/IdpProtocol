@@ -8,6 +8,7 @@ namespace IdpProtocol
     public abstract class IdpAdaptor : IPacketTransmit
     {
         private bool _isActive;
+        private IdpParser _idpParser;
 
         public IdpAdaptor()
         {

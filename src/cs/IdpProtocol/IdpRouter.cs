@@ -433,8 +433,7 @@ namespace IdpProtocol
                             return false;
                         }
 
-                        // debug code only
-                        return false;
+                        return _adaptors.FirstOrDefault().Value.Transmit(packet);
                     }
                 }
             }
