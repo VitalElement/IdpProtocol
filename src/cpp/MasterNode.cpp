@@ -13,7 +13,6 @@ MasterNode::MasterNode ()
     _nodesChanged = false;
     _isEnumerating = false;
     _nextAddress = 2;
-    _nodeTimeout = 10000;
     _root = new NodeInfo (nullptr, MasterNodeAddress);
     _root->Guid = _guid;
     _root->Name = "Network.Master";
@@ -403,8 +402,7 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
 
     Manager ().RegisterOneTimeResponseHandler (
         routerDetectTransactionId,
-        [&, address, routerAddress,
-         routerDetectTransactionId](std::shared_ptr<IdpResponse> response) {
+        [&, address, routerAddress](std::shared_ptr<IdpResponse> response) {
             if (response != nullptr &&
                 response->ResponseCode () == IdpResponseCode::OK)
             {
@@ -440,7 +438,7 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
 
     bool sent = SendRequest (
         routerAddress, outgoingTransaction,
-        [&, address, routerAddress,
+        [&, address,
          routerDetectTransactionId](std::shared_ptr<IdpResponse> response) {
             if (response != nullptr &&
                 response->ResponseCode () == IdpResponseCode::OK)
@@ -539,6 +537,9 @@ void MasterNode::OnNodeAdded (uint16_t parentAddress, uint16_t address)
                          _nodeInfo[address]->Name =
                              response->Transaction ()->ReadCString ();
 
+                         _nodeInfo[address]->Timeout =
+                             response->Transaction ()->Read<uint32_t> ();
+
                          if (_nodeInfo[address]->IsRouter ())
                          {
                              _nodeInfo[address]->EnumerationState =
@@ -566,7 +567,8 @@ void MasterNode::InvalidateNodes ()
         auto address = it->first;
         auto current = it->second;
 
-        if (current != _root && currentTime >= current->LastSeen + _nodeTimeout)
+        if (current != _root &&
+            currentTime >= current->LastSeen + current->Timeout)
         {
             auto childIt = current->Children.begin ();
 
@@ -601,16 +603,6 @@ void MasterNode::PollNetwork ()
     InvalidateNodes ();
 }
 
-uint32_t MasterNode::NodeTimeout ()
-{
-    return _nodeTimeout;
-}
-
-void MasterNode::NodeTimeout (uint32_t value)
-{
-    _nodeTimeout = value;
-}
-
 void MasterNode::TraceNetworkTree (NodeInfo* node, uint32_t level)
 {
     if (node == nullptr)
@@ -628,7 +620,7 @@ void MasterNode::TraceNetworkTree (NodeInfo* node, uint32_t level)
     Trace::Append (">");
 
     Trace::Append (node->Name == nullptr ? "Unnamed" : node->Name);
-    Trace::AppendLine (" (%u)", node->Address);
+    Trace::AppendLine (" (%u) to=%ums", node->Address, node->Timeout);
 
     auto it = node->Children.begin ();
 

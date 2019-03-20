@@ -47,6 +47,7 @@ struct NodeInfo
     uint16_t Address;
     uint64_t LastSeen;
     Guid_t Guid;
+    uint32_t Timeout;
     NodeEnumerationState EnumerationState;
 
     NodeInfo* Parent;
@@ -65,7 +66,6 @@ class MasterNode : public IdpNode
     std::stack<uint16_t> _freeAddresses;
     std::map<uint16_t, NodeInfo*> _nodeInfo;
     NodeInfo* _root;
-    uint32_t _nodeTimeout;
     NodeInfo* _currentEnumerationNode;
     bool _isEnumerating;
 
@@ -106,9 +106,6 @@ class MasterNode : public IdpNode
 
     bool HasNode (uint16_t address);
     NodeInfo& GetNodeInfo (uint16_t address);
-
-    uint32_t NodeTimeout ();
-    void NodeTimeout (uint32_t value);
 
     void ResetNetwork ();
 

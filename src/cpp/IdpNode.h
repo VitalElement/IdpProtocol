@@ -60,6 +60,7 @@ class IdpNode
     const char* _name;
     uint64_t _lastPing;
     DispatcherTimer* _pingTimer;
+    uint32_t _timeout;
 
   protected:
     Guid_t _guid;
@@ -95,6 +96,9 @@ class IdpNode
     virtual void OnReset ();
 
     virtual void OnPollTimerTick ();
+
+    uint32_t Timeout ();
+    void Timeout (uint32_t value);
 
     uint16_t Address ();
     void Address (uint16_t address);

@@ -14,6 +14,7 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
 
     _guid = guid;
 
+    _timeout = 1000;
     _name = name;
     _lastPing = 0;
 
@@ -44,6 +45,8 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
             outgoing->WriteGuid (_guid);
 
             outgoing->Write ((void*) _name, strlen (_name) + 1);
+
+            outgoing->Write (Timeout ());
 
             return IdpResponseCode::OK;
         });
@@ -104,6 +107,16 @@ void IdpNode::OnPollTimerTick ()
             this->OnReset ();
         }
     }
+}
+
+uint32_t IdpNode::Timeout ()
+{
+    return _timeout;
+}
+
+void IdpNode::Timeout (uint32_t value)
+{
+    _timeout = value;
 }
 
 uint32_t IdpNode::CreateTransactionId ()
