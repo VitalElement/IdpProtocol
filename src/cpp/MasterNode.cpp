@@ -13,7 +13,7 @@ MasterNode::MasterNode ()
     _nodesChanged = false;
     _isEnumerating = false;
     _nextAddress = 2;
-    _nodeTimeout = 5000;
+    _nodeTimeout = 10000;
     _root = new NodeInfo (nullptr, MasterNodeAddress);
     _root->Guid = _guid;
     _root->Name = "Network.Master";
