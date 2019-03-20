@@ -14,7 +14,7 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
 
     _guid = guid;
 
-    _timeout = 1000;
+    _timeout = 2500;
     _name = name;
     _lastPing = 0;
 
