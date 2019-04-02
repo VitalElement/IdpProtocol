@@ -466,8 +466,7 @@ TEST_CASE ("Master times out nodes that dont respond to polling")
 
     masterNode.TraceNetworkTree ();
 
-    TestRuntime::IterateRuntime (1100);
-    TestRuntime::IterateRuntime (0, 1000);
+    TestRuntime::IterateRuntime (1100, 1000);
 
     masterNode.PollNetwork ();
 
@@ -481,11 +480,11 @@ TEST_CASE ("Master times out nodes that dont respond to polling")
     auto child2Address = childNode2.Address ();
     childNode2.Enabled (false);
 
-    TestRuntime::IterateRuntime (2500);
+    TestRuntime::IterateRuntime (2500, 100);
 
     masterNode.PollNetwork ();
 
-    TestRuntime::IterateRuntime (2600);
+    TestRuntime::IterateRuntime (2600, 100);
 
     masterNode.PollNetwork ();
 
@@ -500,7 +499,7 @@ TEST_CASE ("Master times out nodes that dont respond to polling")
 
     masterNode.EnumerateNetwork ();
 
-    REQUIRE_FALSE (masterNode.IsEnumerating ());
+    TestRuntime::IterateRuntime (0, 1000);
 
     masterNode.TraceNetworkTree ();
 
