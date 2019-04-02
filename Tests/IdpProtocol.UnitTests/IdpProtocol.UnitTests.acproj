@@ -16,50 +16,24 @@
   "excludedFiles": [
     "build"
   ],
-  "type": "Executable",
   "includes": [
     {
       "value": "./",
-      "exported": true,
-      "global": false
+      "exported": true
     }
   ],
-  "staticLibraries": [],
-  "executable": "build/bin/IdpProtocol.UnitTests.exe",
+  "executable": "build/bin/IdpProtocol.UnitTests",
   "toolchainSettings": {
     "AvalonStudio.Toolchains.GCC.GccToolchainSettings": {
       "compileSettings": {
-        "defines": [],
-        "includes": [],
-        "compileExtensions": [],
-        "assembleExtensions": [],
         "debugInformation": true,
         "rtti": true,
         "exceptions": true,
         "customFlags": "-Wno-unknown-pragmas",
-        "cLanguageStandard": "Default",
-        "cppLanguageStandard": "Cpp14",
-        "optimization": "None",
-        "fpu": "None"
+        "cppLanguageStandard": "Cpp14"
       },
       "linkSettings": {
-        "linkedLibraries": [],
-        "linkerScripts": [],
-        "systemLibraries": [],
-        "useMemoryLayout": false,
-        "discardUnusedSections": false,
-        "notUseStandardStartupFiles": false,
-        "library": "None",
-        "selectedDeviceId": 0,
-        "inRom1Start": 0,
-        "inRom1Size": 0,
-        "inRom2Start": 0,
-        "inRom2Size": 0,
-        "inRam1Start": 0,
-        "inRam1Size": 0,
-        "inRam2Start": 0,
-        "inRam2Size": 0,
-        "debugInRam": false
+        "miscLinkerArguments": "-static-libgcc -static-libstdc++"
       }
     },
     "AvalonStudio.Toolchains.PublishedGCC.PublishedGCCToolchainSettings": {
