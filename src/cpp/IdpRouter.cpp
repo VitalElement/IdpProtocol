@@ -468,7 +468,7 @@ bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
         return false;
     }
 
-    if ((source >= 9 || destination >= 9) && command != 0xc000 &&
+    /*if ((source >= 9 || destination >= 9) && command != 0xc000 &&
         command != 0xc001 && command != 0xa00b)
     {
         if (command == (uint16_t) NodeCommand::Response)
@@ -499,7 +499,7 @@ bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
         }
 
         Trace::AppendLine ("");
-    }
+    }*/
 
     packet->ResetRead ();
 
