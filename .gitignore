@@ -4,3 +4,5 @@
 *.exe
 
 Tests/IdpProtcocol\.UnitTests/build/bin/
+
+Tests/IdpProtocol\.UnitTests/build/bin/
