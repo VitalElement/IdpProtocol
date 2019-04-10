@@ -32,7 +32,7 @@ MasterNode::MasterNode ()
             }
             else
             {
-                return IdpResponseCode::NotReady;
+                return IdpResponseCode::Deferred;
             }
         });
 
