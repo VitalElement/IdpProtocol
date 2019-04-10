@@ -73,15 +73,3 @@ uint64_t TestSystemTime::GetSystemTime ()
 TestApplication::TestApplication () : Application (*new TestSystemTime ())
 {
 }
-
-DispatcherActions& TestApplication::GetDispatcherActions ()
-{
-}
-
-Dispatcher& TestApplication::GetCurrentDispatcher ()
-{
-}
-
-void TestApplication::RegisterDispatcherToThread (Dispatcher& dispatcher)
-{
-}
