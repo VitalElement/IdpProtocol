@@ -512,7 +512,7 @@ TEST_CASE ("Master times out nodes that dont respond to polling")
 
     masterNode.PollNetwork ();
 
-    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 6200);
+    REQUIRE (masterNode.GetNodeInfo (childNode2.Address ()).LastSeen == 9100);
 }
 
 TEST_CASE ("Able to enumerate nodes that have addresses assigned to a previous "
