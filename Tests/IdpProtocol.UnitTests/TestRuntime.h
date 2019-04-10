@@ -36,4 +36,10 @@ class TestApplication : public Application
     virtual ~TestApplication ()
     {
     }
+
+    DispatcherActions& GetDispatcherActions ();
+
+    Dispatcher& GetCurrentDispatcher ();
+
+    void RegisterDispatcherToThread (Dispatcher& dispatcher);
 };

@@ -73,3 +73,8 @@ uint64_t TestSystemTime::GetSystemTime ()
 TestApplication::TestApplication () : Application (*new TestSystemTime ())
 {
 }
+
+DispatcherActions& TestApplication::GetDispatcherActions ()
+{
+    return *new DispatcherActions ();
+}
