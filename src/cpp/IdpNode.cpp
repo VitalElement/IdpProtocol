@@ -23,7 +23,14 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
         [&](std::shared_ptr<IdpResponse> response) {
             if (response->ResponseCode () == IdpResponseCode::OK)
             {
-                _lastPing = Application::GetApplicationTime ();
+                if (response->Transaction ()->Read<bool> ())
+                {
+                    _lastPing = Application::GetApplicationTime ();
+                }
+                else
+                {
+                    OnReset ();
+                }
             }
             else
             {

@@ -26,14 +26,9 @@ MasterNode::MasterNode ()
         static_cast<uint16_t> (NodeCommand::Ping),
         [&](std::shared_ptr<IncomingTransaction> incoming,
             std::shared_ptr<OutgoingTransaction> outgoing) {
-            if (this->HandlePollResponse (incoming->Source ()))
-            {
-                return IdpResponseCode::OK;
-            }
-            else
-            {
-                return IdpResponseCode::Deferred;
-            }
+            outgoing->Write (this->HandlePollResponse (incoming->Source ()));
+
+            return IdpResponseCode::OK;
         });
 
     Manager ().RegisterCommand (
