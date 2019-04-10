@@ -453,22 +453,22 @@ bool IdpRouter::Transmit (uint16_t adaptorId, std::shared_ptr<IdpPacket> packet)
 
 bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
 {
-    auto destination = packet->Destination ();
     auto source = packet->Source ();
-
-    packet->ResetReadToPayload ();
-    auto command = packet->Read<uint16_t> ();
-
-    auto transactionId = packet->Read<uint32_t> ();
-    packet->Read<uint8_t> ();
-
 
     if (source == UnassignedAddress)
     {
         return false;
     }
 
-    /*if ((source >= 9 || destination >= 9) && command != 0xc000 &&
+    auto destination = packet->Destination ();
+
+    packet->ResetReadToPayload ();
+    /*auto command = packet->Read<uint16_t> ();
+
+    auto transactionId = packet->Read<uint32_t> ();
+    packet->Read<uint8_t> ();
+
+    if ((source >= 9 || destination >= 9) && command != 0xc000 &&
         command != 0xc001 && command != 0xa00b)
     {
         if (command == (uint16_t) NodeCommand::Response)
