@@ -88,7 +88,7 @@ bool IdpClientNode::SendRequest (std::shared_ptr<OutgoingTransaction> request)
 
 void IdpClientNode::OnConnect (uint16_t serverAddress)
 {
-    if (_serverAddress == UnassignedAddress)
+    if (_serverAddress != serverAddress)
     {
         Trace::WriteLine ("Client Connected", "IdpClientNode");
 
