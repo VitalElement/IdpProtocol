@@ -23,14 +23,7 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
         [&](std::shared_ptr<IdpResponse> response) {
             if (response->ResponseCode () == IdpResponseCode::OK)
             {
-                if (response->Transaction ()->Read<bool> ())
-                {
-                    _lastPing = Application::GetApplicationTime ();
-                }
-                else
-                {
-                    OnReset ();
-                }
+                _lastPing = Application::GetApplicationTime ();
             }
             else
             {
@@ -63,7 +56,6 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
         [&](std::shared_ptr<IncomingTransaction> incoming,
             std::shared_ptr<OutgoingTransaction> outgoing) {
             Guid_t requestedGuid = incoming->ReadGuid ();
-
 
             if (_guid == requestedGuid)
             {
@@ -99,7 +91,7 @@ void IdpNode::OnPollTimerTick ()
 {
     auto elapsedTime = Application::GetApplicationTime () - _lastPing;
 
-    if (elapsedTime > 4000)
+    if (elapsedTime > _timeout)
     {
         this->OnReset ();
     }

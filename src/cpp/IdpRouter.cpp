@@ -462,14 +462,13 @@ bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
 
     auto destination = packet->Destination ();
 
-    packet->ResetReadToPayload ();
-    /*auto command = packet->Read<uint16_t> ();
+    /*packet->ResetReadToPayload ();
+    auto command = packet->Read<uint16_t> ();
 
     auto transactionId = packet->Read<uint32_t> ();
     packet->Read<uint8_t> ();
 
-    if ((source >= 9 || destination >= 9) && command != 0xc000 &&
-        command != 0xc001 && command != 0xa00b)
+    if ((source == 1 && destination >= 8) || (destination == 1 && source >= 8))
     {
         if (command == (uint16_t) NodeCommand::Response)
         {
