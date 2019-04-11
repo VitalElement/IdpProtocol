@@ -29,11 +29,11 @@ namespace IdpProtocol
         RouterPoll = 0xA00B
     };
 
-    public class IdpNode
+    public class IdpNode 
     {
         public const UInt16 UnassignedAddress = 0xFFFF;
         public const UInt16 RouterPollAddress = 0xFFFE;
-        public const UInt32 DefaultTimeoutMsec = 5000;
+        public const UInt32 DefaultTimeoutMsec = 1000;
         private TaskCompletionSource<bool> _enumerationSource;
         private UInt32 _currentTransactionId;
         private DateTime _lastPing = DateTime.Now;
@@ -52,7 +52,14 @@ namespace IdpProtocol
 
             Manager.RegisterResponseHandler((UInt16)NodeCommand.Ping, response =>
             {
-                _lastPing = DateTime.Now;
+                if (response.ResponseCode == IdpResponseCode.OK)
+                {
+                    _lastPing = DateTime.Now;
+                }
+                else
+                {
+                    OnReset();
+                }
             });
 
             Manager.RegisterCommand((UInt16)NodeCommand.Ping, (i, o) =>
@@ -68,8 +75,7 @@ namespace IdpProtocol
 
                 o.Write(utf8Name);
                 o.Write((byte)0); // null terminator, is this required?
-
-                o.Write((byte)1);
+                o.Write(Timeout);
 
                 SetEnumerated();
 
@@ -99,31 +105,21 @@ namespace IdpProtocol
 
             _enumerationSource = new TaskCompletionSource<bool>();
 
-            Observable.Interval(TimeSpan.FromSeconds(1)).ObserveOn(CurrentThreadScheduler.Instance).Subscribe(async _ =>
+            Observable.Interval(TimeSpan.FromSeconds(1)).ObserveOn(CurrentThreadScheduler.Instance).Subscribe(_ =>
             {
-                await OnPollTimerTickAsync();
+                OnPollTimerTick();
             });
         }
 
-        public virtual async Task OnPollTimerTickAsync ()
+        public virtual void OnPollTimerTick ()
         {
             if (Address != UnassignedAddress && Enabled)
             {
                 SendRequest(1, OutgoingTransaction.Create((UInt16)NodeCommand.Ping, CreateTransactionId(), IdpCommandFlags.None));
-
-                /*if (response.success && response.response != null && response.response.ResponseCode == IdpResponseCode.OK)
-                {
-                    if (DateTime.Now - _lastPing > TimeSpan.FromSeconds(4))
-                    {
-                        OnReset();
-                    }
-                }
-                else if (response.response != null || response.success == false)
-                {
-                    OnReset();
-                }*/
             }
         }
+
+        public UInt32 Timeout { get; set; } = 2500;
 
         public UInt32 CreateTransactionId ()
         {
