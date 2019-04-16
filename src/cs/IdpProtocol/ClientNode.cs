@@ -2,6 +2,8 @@
 // Licensed under the MIT license. See licence.md file in the project root for full license information.
 
 using System;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace IdpProtocol
@@ -12,7 +14,7 @@ namespace IdpProtocol
         Disconnect
     };
 
-    public abstract class ClientNode : IdpNode
+    public abstract class ClientNode : NetworkQueryNode
     {
         private UInt16 _serverAddress;
 
@@ -27,6 +29,48 @@ namespace IdpProtocol
         }
 
         public async Task<bool> ConnectAsync()
+        {
+            var type = GetType();
+            var guidAttribute = type.GetCustomAttributes(typeof(GuidAttribute), true).OfType<GuidAttribute>().FirstOrDefault();
+
+            if (guidAttribute == null)
+            {
+                throw new Exception("T must have a Guid Attribute specifying the interface.");
+            }
+
+            var guid = Guid.Parse(guidAttribute.Value);
+
+            var remoteAddress = await QueryInterfaceAsync(guid);
+
+            if (remoteAddress != 0)
+            {
+                SetAddress(remoteAddress);
+
+                return true;
+            }
+            else
+            {
+                SetAddress(UnassignedAddress);
+            }
+
+            return false;
+        }
+
+        public async Task<bool> ConnectAsyc(Guid guid)
+        {
+            var remoteAddress = await QueryInterfaceAsync(guid);
+
+            if (remoteAddress != 0)
+            {
+                SetAddress(remoteAddress);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public async Task<bool> ConnectClientAsync()
         {
             var (success, response) = await SendRequestAsync(OutgoingTransaction.Create((UInt16)ClientCommand.Connect, CreateTransactionId()));
 

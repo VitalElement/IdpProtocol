@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 
 namespace IdpProtocol
 {
-    public class NetworkQueryNode : IdpNode
+    public abstract class NetworkQueryNode : IdpNode
     {
-        public NetworkQueryNode() : base(Guid.Parse("883E1105-5312-49C3-A9C5-BC7CFAF50EC6"), "Network.QueryNode")
+        public NetworkQueryNode(Guid nodeGuid, string nodeName) : base(nodeGuid, nodeName)
         {
         }
 
