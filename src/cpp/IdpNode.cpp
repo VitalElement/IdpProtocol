@@ -25,10 +25,6 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
             {
                 _lastPing = Application::GetApplicationTime ();
             }
-            else
-            {
-                OnReset ();
-            }
         });
 
     Manager ().RegisterCommand (
