@@ -50,6 +50,14 @@ class IncomingTransaction
     void Read (void* destination, uint32_t length);
 
     /**
+     * Returns a pointer to the current data entry, and consumes
+     * the data for another read.
+     * 
+     * ZeroCopy.
+     */ 
+    void* ConsumeData(uint32_t length);
+
+    /**
      * Reads a UTF8 encoded string from the buffer.
      * Note: The result is heap allocated and user must call delete[]
      * when they are finished with the value.
