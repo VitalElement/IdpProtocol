@@ -80,3 +80,11 @@ void IncomingTransaction::Read (void* destination, uint32_t length)
     memcpy (destination, (void*) (_data.get () + _readIndex), length);
     _readIndex += length;
 }
+
+void* IncomingTransaction::ConsumeData(uint32_t length)
+{
+    void* data = (void *) (_data.get() + _readIndex);
+    _readIndex += length;
+
+    return data;
+}
