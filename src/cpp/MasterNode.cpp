@@ -339,9 +339,17 @@ void MasterNode::EnumerateRouterNode (uint16_t routerAddress)
 
     if (!sent)
     {
+        GetNodeInfo (routerAddress).LastSeen = 0xFFFFFFFFFFFFFFFF;
+
         Trace::WriteLine ("Enumerate nodes failed.");
 
-        _currentEnumerationNode->EnumerationState = NodeEnumerationState::Idle;
+        VisitNodes (_root, [&](NodeInfo& node) {
+            node.EnumerationState = NodeEnumerationState::Idle;
+
+            return true;
+        });
+
+        InvalidateNodes ();
 
         this->OnEnumerate ();
     }
@@ -379,9 +387,17 @@ void MasterNode::StartEnumerateRouterAdaptors (uint16_t routerAddress)
 
     if (!sent)
     {
-        Trace::WriteLine ("Begin Enumerate adaptors failed.");
+        GetNodeInfo (routerAddress).LastSeen = 0xFFFFFFFFFFFFFFFF;
 
-        _currentEnumerationNode->EnumerationState = NodeEnumerationState::Idle;
+        Trace::WriteLine ("Begin Enumerate Adaptors failed.");
+
+        VisitNodes (_root, [&](NodeInfo& node) {
+            node.EnumerationState = NodeEnumerationState::Idle;
+
+            return true;
+        });
+
+        InvalidateNodes ();
 
         this->OnEnumerate ();
     }
@@ -501,9 +517,17 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
         this->Manager ().UnregisterOneTimeResponseHandler (
             routerDetectTransactionId);
 
-        Trace::WriteLine ("Enumerate adaptor failed.");
+        GetNodeInfo (routerAddress).LastSeen = 0xFFFFFFFFFFFFFFFF;
 
-        _currentEnumerationNode->EnumerationState = NodeEnumerationState::Idle;
+        Trace::WriteLine ("Enumerate Adaptors failed.");
+
+        VisitNodes (_root, [&](NodeInfo& node) {
+            node.EnumerationState = NodeEnumerationState::Idle;
+
+            return true;
+        });
+
+        InvalidateNodes ();
 
         this->OnEnumerate ();
     }
@@ -568,7 +592,8 @@ void MasterNode::InvalidateNodes ()
         auto current = it->second;
 
         if (current != _root &&
-            currentTime >= current->LastSeen + current->Timeout)
+            (currentTime >= current->LastSeen + current->Timeout ||
+             current->LastSeen == 0xFFFFFFFFFFFFFFFF))
         {
             auto childIt = current->Children.begin ();
 
