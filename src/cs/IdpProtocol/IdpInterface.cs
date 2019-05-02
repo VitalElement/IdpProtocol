@@ -81,7 +81,7 @@ namespace IdpProtocol
 
         public override bool Transmit(IdpPacket packet)
         {
-            if (OutputStream != null)
+            if (!_isDisposing && OutputStream != null)
             {
                 try
                 {

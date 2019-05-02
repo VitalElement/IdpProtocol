@@ -56,10 +56,6 @@ namespace IdpProtocol
                 {
                     _lastPing = DateTime.Now;
                 }
-                else
-                {
-                    OnReset();
-                }
             });
 
             Manager.RegisterCommand((UInt16)NodeCommand.Ping, (i, o) =>
