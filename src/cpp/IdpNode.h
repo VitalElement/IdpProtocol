@@ -118,4 +118,7 @@ class IdpNode
     const char* Name ();
 
     uint32_t CreateTransactionId ();
+
+    Event Enumerated;
+    Event Disconnected;
 };

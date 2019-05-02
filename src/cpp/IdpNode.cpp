@@ -121,6 +121,14 @@ uint32_t IdpNode::CreateTransactionId ()
 
 void IdpNode::OnAddressAssigned (uint16_t address)
 {
+    if (address != UnassignedAddress)
+    {
+        Enumerated (this);
+    }
+    else
+    {
+        Disconnected (this);
+    }
 }
 
 void IdpNode::OnReset ()
