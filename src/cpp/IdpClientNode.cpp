@@ -94,6 +94,9 @@ void IdpClientNode::OnConnect (uint16_t serverAddress)
 
         _serverAddress = serverAddress;
 
+        SendRequest (OutgoingTransaction::Create (
+            (uint16_t) ClientCommand::Connect, CreateTransactionId ()));
+
         Connected (this, EventArgs::Empty);
 
         _lastPing = Application::GetApplicationTime ();

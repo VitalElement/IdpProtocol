@@ -7,7 +7,7 @@
 #pragma once
 
 #include "DispatcherTimer.h"
-#include "IdpNode.h"
+#include "IdpServerNode.h"
 #include <stdbool.h>
 #include <stdint.h>
 
