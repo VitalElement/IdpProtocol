@@ -34,6 +34,13 @@ IdpServerNode::~IdpServerNode ()
 {
 }
 
+void IdpServerNode::OnReset ()
+{
+    IdpNode::OnReset ();
+
+    _clientAddress = UnassignedAddress;
+}
+
 bool IdpServerNode::IsClientConnected ()
 {
     return _clientAddress != UnassignedAddress;

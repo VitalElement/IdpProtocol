@@ -32,6 +32,8 @@ class IdpServerNode : public IdpNode
 
     virtual ~IdpServerNode ();
 
+    virtual void OnReset ();
+
   protected:
     bool IsClientConnected ();
     uint16_t ClientAddress ();
