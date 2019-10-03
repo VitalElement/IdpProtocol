@@ -56,7 +56,7 @@ namespace IdpProtocol
             return false;
         }
 
-        public async Task<bool> ConnectAsyc(Guid guid)
+        public async Task<bool> ConnectAsync(Guid guid)
         {
             var remoteAddress = await QueryInterfaceAsync(guid);
 
