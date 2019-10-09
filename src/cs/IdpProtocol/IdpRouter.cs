@@ -84,6 +84,12 @@ namespace IdpProtocol
 
                     _currentlyEnumeratingAdaptor = null;
                 }
+                else if(_lastAdaptorId != -1)
+                {
+                    _adaptors[(ushort)_lastAdaptorId].IsEnumerated = true;
+
+                    _lastAdaptorId = -1;
+                }
 
                 return IdpResponseCode.OK;
             });
@@ -235,12 +241,18 @@ namespace IdpProtocol
             return _adaptors.Values.FirstOrDefault(a => !a.IsRenumerated);
         }
 
+        private int _lastAdaptorId = -1;
         public bool Transmit(ushort adaptorId, IdpPacket packet)
         {
             var source = packet.Source;
 
             if (source != UnassignedAddress && adaptorId != 0xFFFF)
             {
+                //if (!_adaptors[adaptorId].IsEnumerated)
+                {
+                    _lastAdaptorId = adaptorId;
+                }
+
                 if (!(source == 1 && _routingTable.ContainsKey(source)))
                 {
                     _routingTable[source] = adaptorId;
