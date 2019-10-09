@@ -24,6 +24,8 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
     _pollTimer->Tick += [&](auto sender, auto& e) {
         if (_serverAddress == UnassignedAddress)
         {
+            Trace::WriteLine ("Silent Reconnecting", "IdpClientNode");
+
             this->QueryInterface (_serverGuid);
         }
         else
@@ -32,6 +34,8 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
 
             if (elapsedTime > 4000)
             {
+                Trace::WriteLine ("Client timeout.", "IdpClientNode");
+
                 this->OnDisconnect ();
                 _lastPing = Application::GetApplicationTime ();
             }
@@ -50,6 +54,10 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
                             }
                         }))
                 {
+                    Trace::WriteLine (
+                        "Unable to send ping command. Disconnecting",
+                        "IdpClientNode");
+
                     this->OnDisconnect ();
                 }
             }
@@ -90,16 +98,32 @@ void IdpClientNode::OnConnect (uint16_t serverAddress)
 {
     if (_serverAddress != serverAddress)
     {
-        Trace::WriteLine ("Client Connected", "IdpClientNode");
+        Trace::WriteLine ("Client Found: %u", "IdpClientNode", serverAddress);
 
-        _serverAddress = serverAddress;
+        IdpNode::SendRequest (
+            serverAddress,
+            OutgoingTransaction::Create ((uint16_t) ClientCommand::Connect,
+                                         CreateTransactionId ()),
+            [&](std::shared_ptr<IdpResponse> response) {
+                if (response != nullptr &&
+                    response->ResponseCode () == IdpResponseCode::OK)
+                {
+                    Trace::WriteLine ("Client Connected.", "IdpClientNode");
+                    _serverAddress = serverAddress;
+                    Connected (this, EventArgs::Empty);
 
-        SendRequest (OutgoingTransaction::Create (
-            (uint16_t) ClientCommand::Connect, CreateTransactionId ()));
-
-        Connected (this, EventArgs::Empty);
-
-        _lastPing = Application::GetApplicationTime ();
+                    _lastPing = Application::GetApplicationTime ();
+                }
+                else
+                {
+                    Trace::WriteLine ("Connection Request Timeout.",
+                                      "IdpClientNode");
+                }
+            });
+    }
+    else
+    {
+        Trace::WriteLine ("Invalid Connection.", "IdpClientNode");
     }
 }
 
@@ -117,13 +141,21 @@ void IdpClientNode::OnDisconnect ()
 
 void IdpClientNode::Connect ()
 {
-    Trace::WriteLine ("Connecting Client", "IdpClientNode");
+    if (_serverAddress == UnassignedAddress)
+    {
+        Trace::WriteLine ("Connecting Client", "IdpClientNode");
 
-    _lastPing = Application::GetApplicationTime ();
+        _lastPing = Application::GetApplicationTime ();
 
-    QueryInterface (_serverGuid);
+        QueryInterface (_serverGuid);
 
-    _pollTimer->Start ();
+        _pollTimer->Start ();
+    }
+    else
+    {
+        Trace::WriteLine ("Already connected.", "IdpClientNode");
+        Connected (this, EventArgs::Empty);
+    }
 }
 
 bool IdpClientNode::IsConnected ()
@@ -133,18 +165,50 @@ bool IdpClientNode::IsConnected ()
 
 void IdpClientNode::QueryInterface (Guid_t guid)
 {
-    IdpNode::SendRequest (
+    Trace::WriteLine ("Broadcasting QueryInterface", "IdpClientNode");
+
+    bool queried = IdpNode::SendRequest (
         0,
         OutgoingTransaction::Create ((uint16_t) NodeCommand::QueryInterface,
                                      CreateTransactionId (),
                                      IdpCommandFlags::None)
             ->WriteGuid (guid),
         [&](std::shared_ptr<IdpResponse> response) {
+            Trace::WriteLine ("Broadcast Response Received.", "IdpClientNode");
+
             if (response != nullptr &&
                 response->ResponseCode () == IdpResponseCode::OK &&
                 _serverAddress == UnassignedAddress)
             {
                 OnConnect (response->Transaction ()->Source ());
             }
+            else
+            {
+                Trace::WriteLine ("Broadcast Response Ignored.",
+                                  "IdpClientNode");
+
+                if (response != nullptr)
+                {
+                    Trace::WriteLine ("ServerAddress: %u", "IdpClientNode",
+                                      _serverAddress);
+
+                    Trace::WriteLine ("ResponseCode: %u", "IdpClientNode",
+                                      response->ResponseCode ());
+                }
+                else
+                {
+                    Trace::WriteLine ("QueryInterface Timeout",
+                                      "IdpClientNode");
+                }
+            }
         });
+
+    if (queried)
+    {
+        Trace::WriteLine ("Broadcast success.", "IdpClientNode");
+    }
+    else
+    {
+        Trace::WriteLine ("Broadcast failed.", "IdpClientNode");
+    }
 }
