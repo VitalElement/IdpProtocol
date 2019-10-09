@@ -241,8 +241,6 @@ namespace IdpProtocol
 
             if (source != UnassignedAddress && adaptorId != 0xFFFF)
             {
-                _adaptors[adaptorId].IsEnumerated = true;
-
                 if (!(source == 1 && _routingTable.ContainsKey(source)))
                 {
                     _routingTable[source] = adaptorId;
