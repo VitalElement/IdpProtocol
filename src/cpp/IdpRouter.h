@@ -18,6 +18,7 @@ class IdpRouter : public IdpNode,
                   public IPacketTransmit
 {
   private:
+    int _lastAdaptorId;
     std::list<IdpNode*> _unenumeratedNodes;
     std::map<uint16_t, IdpNode*> _enumeratedNodes;
 

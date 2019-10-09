@@ -10,6 +10,7 @@ static constexpr uint16_t AdaptorNone = 0xFFFF;
 IdpRouter::IdpRouter () : IdpNode (RouterGuid, "Network.Router")
 {
     _currentlyEnumeratingAdaptor = nullptr;
+    _lastAdaptorId = -1;
 
     Manager ().RegisterCommand (
         static_cast<uint16_t> (NodeCommand::RouterPoll),
@@ -86,6 +87,12 @@ IdpRouter::IdpRouter () : IdpNode (RouterGuid, "Network.Router")
                 _currentlyEnumeratingAdaptor->IsEnumerated (true);
 
                 _currentlyEnumeratingAdaptor = nullptr;
+            }
+            else if (_lastAdaptorId != -1)
+            {
+                _adaptors[_lastAdaptorId]->IsEnumerated (true);
+
+                _lastAdaptorId = -1;
             }
 
             return IdpResponseCode::OK;
@@ -435,6 +442,8 @@ bool IdpRouter::Transmit (uint16_t adaptorId, std::shared_ptr<IdpPacket> packet)
 
     if (source != UnassignedAddress && adaptorId != 0xFFFF)
     {
+        _lastAdaptorId = adaptorId;
+
         if (!(source == 1 &&
               _routingTable.find (source) != _routingTable.end ()))
         {
@@ -458,45 +467,47 @@ bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
 
     auto destination = packet->Destination ();
 
-    /*packet->ResetReadToPayload ();
-    auto command = packet->Read<uint16_t> ();
+    /* packet->ResetReadToPayload ();
+     auto command = packet->Read<uint16_t> ();
 
-    auto transactionId = packet->Read<uint32_t> ();
-    packet->Read<uint8_t> ();
+     auto transactionId = packet->Read<uint32_t> ();
+     packet->Read<uint8_t> ();
 
-    // if ((source == 1 && destination >= 10) ||
-    //  (destination == 1 && source >= 10))
-    if (command == 0xa006)
-    {
-        if (command == (uint16_t) NodeCommand::Response)
-        {
-            packet->Read<uint8_t> ();
-            auto response = packet->Read<uint16_t> ();
+     // if ((source == 1 && destination >= 10) ||
+     //  (destination == 1 && source >= 10))
+     // if (command == 0xa006)
 
-            Trace::Write (
-                "R:0x%04x S:0x%04x D:0x%04x "
-                "C:0x%04x I:0x%04x<%s ",
-                "IdpRouter", Address (), source, destination, command,
-                transactionId,
-                IdpNode::GetNodeCommandDescription ((NodeCommand) response));
-        }
-        else
-        {
-            Trace::Write (
-                "R:0x%04x S:0x%04x D:0x%04x "
-                "C:0x%04x I:0x%04x>%s ",
-                "IdpRouter", Address (), source, destination, command,
-                transactionId,
-                IdpNode::GetNodeCommandDescription ((NodeCommand) command));
-        }
+     // if (source >= 9 || destination >= 9)
+     {
+         if (command == (uint16_t) NodeCommand::Response)
+         {
+             packet->Read<uint8_t> ();
+             auto response = packet->Read<uint16_t> ();
 
-        if (packet->Length () <= 32)
-        {
-            Trace::AppendBuffer (packet->Data (), packet->Length ());
-        }
+             Trace::Write (
+                 "R:0x%04x S:0x%04x D:0x%04x "
+                 "C:0x%04x I:0x%04x<%s ",
+                 "IdpRouter", Address (), source, destination, command,
+                 transactionId,
+                 IdpNode::GetNodeCommandDescription ((NodeCommand) response));
+         }
+         else
+         {
+             Trace::Write (
+                 "R:0x%04x S:0x%04x D:0x%04x "
+                 "C:0x%04x I:0x%04x>%s ",
+                 "IdpRouter", Address (), source, destination, command,
+                 transactionId,
+                 IdpNode::GetNodeCommandDescription ((NodeCommand) command));
+         }
 
-        Trace::AppendLine ("");
-    }*/
+         if (packet->Length () <= 32)
+         {
+             Trace::AppendBuffer (packet->Data (), packet->Length ());
+         }
+
+         Trace::AppendLine ("");
+     }*/
 
     packet->ResetRead ();
 
