@@ -49,6 +49,8 @@ void NotifyingStreamAdaptor::Connection (
 
         this->Parser ().Stream (*_connection);
 
+        this->IsReEnumerated (false);
+        this->IsEnumerated (false);
         this->IsActive (true);
     }
     else

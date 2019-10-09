@@ -81,8 +81,6 @@ IdpRouter::IdpRouter () : IdpNode (RouterGuid, "Network.Router")
         static_cast<uint16_t> (NodeCommand::MarkAdaptorConnected),
         [&](std::shared_ptr<IncomingTransaction> incoming,
             std::shared_ptr<OutgoingTransaction> outgoing) {
-            Trace::WriteLine ("Marking adaptor enumerated");
-
             if (_currentlyEnumeratingAdaptor != nullptr)
             {
                 _currentlyEnumeratingAdaptor->IsEnumerated (true);
@@ -437,8 +435,6 @@ bool IdpRouter::Transmit (uint16_t adaptorId, std::shared_ptr<IdpPacket> packet)
 
     if (source != UnassignedAddress && adaptorId != 0xFFFF)
     {
-        _adaptors[adaptorId]->IsEnumerated (true);
-
         if (!(source == 1 &&
               _routingTable.find (source) != _routingTable.end ()))
         {
@@ -468,7 +464,9 @@ bool IdpRouter::Route (std::shared_ptr<IdpPacket> packet)
     auto transactionId = packet->Read<uint32_t> ();
     packet->Read<uint8_t> ();
 
-    if ((source == 1 && destination >= 8) || (destination == 1 && source >= 8))
+    // if ((source == 1 && destination >= 10) ||
+    //  (destination == 1 && source >= 10))
+    if (command == 0xa006)
     {
         if (command == (uint16_t) NodeCommand::Response)
         {
