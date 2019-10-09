@@ -104,11 +104,11 @@ void IdpClientNode::OnConnect (uint16_t serverAddress)
             serverAddress,
             OutgoingTransaction::Create ((uint16_t) ClientCommand::Connect,
                                          CreateTransactionId ()),
-            [&](std::shared_ptr<IdpResponse> response) {
+            [&,serverAddress](std::shared_ptr<IdpResponse> response) {
                 if (response != nullptr &&
                     response->ResponseCode () == IdpResponseCode::OK)
                 {
-                    Trace::WriteLine ("Client Connected.", "IdpClientNode");
+                    Trace::WriteLine ("Client Connected. %u", "IdpClientNode", serverAddress);
                     _serverAddress = serverAddress;
                     Connected (this, EventArgs::Empty);
 
