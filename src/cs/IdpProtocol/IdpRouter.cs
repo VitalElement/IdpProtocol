@@ -17,6 +17,7 @@ namespace IdpProtocol
         private Dictionary<UInt16, UInt16> _routingTable;
         private UInt16 _nextAdaptorId;
         private IdpAdaptor _currentlyEnumeratingAdaptor;
+        private int _lastAdaptorId = -1;
 
         public static readonly Guid RouterGuid = Guid.Parse("A1EE332D-5C7C-42FE-9519-54BDAC40CF21");
 
@@ -241,7 +242,6 @@ namespace IdpProtocol
             return _adaptors.Values.FirstOrDefault(a => !a.IsRenumerated);
         }
 
-        private int _lastAdaptorId = -1;
         public bool Transmit(ushort adaptorId, IdpPacket packet)
         {
             var source = packet.Source;
