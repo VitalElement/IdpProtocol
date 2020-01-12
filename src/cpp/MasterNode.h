@@ -68,6 +68,7 @@ class MasterNode : public IdpNode
     NodeInfo* _root;
     NodeInfo* _currentEnumerationNode;
     bool _isEnumerating;
+    bool _queueEnumeration;
 
     NodeInfo* FindNode (uint16_t address);
 

@@ -12,6 +12,7 @@ MasterNode::MasterNode ()
 {
     _nodesChanged = false;
     _isEnumerating = false;
+    _queueEnumeration = false;
     _nextAddress = 2;
     _root = new NodeInfo (nullptr, MasterNodeAddress);
     _root->Guid = _guid;
@@ -42,13 +43,19 @@ MasterNode::MasterNode ()
             std::shared_ptr<OutgoingTransaction> outgoing) {
             if (!this->IsEnumerating ())
             {
+                _pollTimer->Stop ();
+
                 this->EnumerateNetwork ();
+            }
+            else
+            {
+                _queueEnumeration = true;
             }
 
             return IdpResponseCode::OK;
         });
 
-    _pollTimer = new DispatcherTimer (1000);
+    _pollTimer = new DispatcherTimer (500);
 
     _pollTimer->Tick += [&](auto sender, auto& e) {
         _pollTimer->Stop ();
@@ -212,7 +219,16 @@ void MasterNode::OnEnumerate ()
             TraceNetworkTree ();
         }
 
-        _pollTimer->Start ();
+        if (_queueEnumeration)
+        {
+            _queueEnumeration = false;
+
+            EnumerateNetwork ();
+        }
+        else
+        {
+            _pollTimer->Start ();
+        }
     }
 }
 
