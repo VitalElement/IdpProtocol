@@ -38,6 +38,8 @@ namespace IdpProtocol
         private UInt32 _currentTransactionId;
         private DateTime _lastPing = DateTime.Now;
 
+        public static IScheduler IdpScheduler { get; set; }
+
         public IdpNode(Guid guid, string name, UInt16 address = UnassignedAddress)
         {
             Manager = new IdpCommandManager();
@@ -101,7 +103,7 @@ namespace IdpProtocol
 
             _enumerationSource = new TaskCompletionSource<bool>();
 
-            Observable.Interval(TimeSpan.FromSeconds(1)).ObserveOn(CurrentThreadScheduler.Instance).Subscribe(_ =>
+            Observable.Interval(TimeSpan.FromSeconds(1)).ObserveOn(IdpScheduler ?? CurrentThreadScheduler.Instance).Subscribe(_ =>
             {
                 OnPollTimerTick();
             });
