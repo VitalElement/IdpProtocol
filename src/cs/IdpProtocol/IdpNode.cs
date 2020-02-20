@@ -117,7 +117,7 @@ namespace IdpProtocol
             }
         }
 
-        public UInt32 Timeout { get; set; } = 2500;
+        public UInt32 Timeout { get; set; } = DefaultTimeoutMsec;
 
         public UInt32 CreateTransactionId ()
         {
