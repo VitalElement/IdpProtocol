@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See licence.md file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
@@ -129,9 +130,30 @@ namespace IdpProtocol
             Address = UnassignedAddress;
         }
 
-        public Task<bool> WaitForEnumeration()
+        public async Task<bool> WaitForEnumeration()
         {
-            return _enumerationSource.Task;
+            var time = DateTime.Now;
+
+            while (true)
+            {
+                if(!_enumerationSource.Task.IsCompleted)
+                {
+                    if(DateTime.Now - time > TimeSpan.FromSeconds(5))
+                    {
+                        return false;
+                    }
+
+                    await Task.Delay(500);
+
+                    SendRequest(0x0001, OutgoingTransaction.Create((UInt16)NodeCommand.RecommendEnumeration, CreateTransactionId(), IdpCommandFlags.None));
+                }
+                else
+                {
+                    return await _enumerationSource.Task;
+                }
+
+                await Task.Delay(100);
+            }
         }
 
         public IdpPacket ProcessPacket(IdpPacket packet)
