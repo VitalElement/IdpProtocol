@@ -443,7 +443,7 @@ namespace IdpProtocol
                             return false;
                         }
 
-                        return _adaptors.FirstOrDefault().Value.Transmit(packet);
+                        return _adaptors.FirstOrDefault().Value?.Transmit(packet) ?? false;
                     }
                 }
             }

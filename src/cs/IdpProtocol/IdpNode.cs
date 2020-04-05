@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See licence.md file in the project root for full license information.
 
 using System;
+using System.Diagnostics;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
@@ -37,6 +38,8 @@ namespace IdpProtocol
         private TaskCompletionSource<bool> _enumerationSource;
         private UInt32 _currentTransactionId;
         private DateTime _lastPing = DateTime.Now;
+
+        public static IScheduler IdpScheduler { get; set; }
 
         public IdpNode(Guid guid, string name, UInt16 address = UnassignedAddress)
         {
@@ -101,7 +104,7 @@ namespace IdpProtocol
 
             _enumerationSource = new TaskCompletionSource<bool>();
 
-            Observable.Interval(TimeSpan.FromSeconds(1)).ObserveOn(CurrentThreadScheduler.Instance).Subscribe(_ =>
+            Observable.Interval(TimeSpan.FromSeconds(1)).ObserveOn(IdpScheduler ?? CurrentThreadScheduler.Instance).Subscribe(_ =>
             {
                 OnPollTimerTick();
             });
@@ -115,7 +118,7 @@ namespace IdpProtocol
             }
         }
 
-        public UInt32 Timeout { get; set; } = 2500;
+        public UInt32 Timeout { get; set; } = DefaultTimeoutMsec;
 
         public UInt32 CreateTransactionId ()
         {
@@ -127,9 +130,30 @@ namespace IdpProtocol
             Address = UnassignedAddress;
         }
 
-        public Task<bool> WaitForEnumeration()
+        public async Task<bool> WaitForEnumeration()
         {
-            return _enumerationSource.Task;
+            var time = DateTime.Now;
+
+            while (true)
+            {
+                if(!_enumerationSource.Task.IsCompleted)
+                {
+                    if(DateTime.Now - time > TimeSpan.FromSeconds(5))
+                    {
+                        return false;
+                    }
+
+                    await Task.Delay(500);
+
+                    SendRequest(0x0001, OutgoingTransaction.Create((UInt16)NodeCommand.RecommendEnumeration, CreateTransactionId(), IdpCommandFlags.None));
+                }
+                else
+                {
+                    return await _enumerationSource.Task;
+                }
+
+                await Task.Delay(100);
+            }
         }
 
         public IdpPacket ProcessPacket(IdpPacket packet)
