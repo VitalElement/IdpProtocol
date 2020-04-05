@@ -175,32 +175,40 @@ void IdpClientNode::QueryInterface (Guid_t guid)
                                      IdpCommandFlags::None)
             ->WriteGuid (guid),
         [&](std::shared_ptr<IdpResponse> response) {
-            Trace::WriteLine ("Broadcast Response Received.", "IdpClientNode");
-
-            if (response != nullptr &&
-                response->ResponseCode () == IdpResponseCode::OK &&
-                _serverAddress == UnassignedAddress)
+            if (response != nullptr)
             {
-                OnConnect (response->Transaction ()->Source ());
-            }
-            else
-            {
-                Trace::WriteLine ("Broadcast Response Ignored.",
-                                  "IdpClientNode");
+                Trace::WriteLine ("Broadcast Response Received. %u",
+                                  "IdpClientNode",
+                                  response->Transaction ()->Source ());
 
-                if (response != nullptr)
+                if (response->ResponseCode () == IdpResponseCode::OK &&
+                    _serverAddress == UnassignedAddress)
                 {
-                    Trace::WriteLine ("ServerAddress: %u", "IdpClientNode",
-                                      _serverAddress);
-
-                    Trace::WriteLine ("ResponseCode: %u", "IdpClientNode",
-                                      response->ResponseCode ());
+                    OnConnect (response->Transaction ()->Source ());
                 }
                 else
                 {
-                    Trace::WriteLine ("QueryInterface Timeout",
+                    Trace::WriteLine ("Broadcast Response Ignored.",
                                       "IdpClientNode");
+
+                    if (response != nullptr)
+                    {
+                        Trace::WriteLine ("ServerAddress: %u", "IdpClientNode",
+                                          _serverAddress);
+
+                        Trace::WriteLine ("ResponseCode: %u", "IdpClientNode",
+                                          response->ResponseCode ());
+                    }
+                    else
+                    {
+                        Trace::WriteLine ("QueryInterface Timeout",
+                                          "IdpClientNode");
+                    }
                 }
+            }
+            else
+            {
+                Trace::WriteLine ("Broadcast Response Window Closed.");
             }
         });
 
