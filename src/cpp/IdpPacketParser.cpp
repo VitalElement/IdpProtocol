@@ -102,6 +102,11 @@ bool IdpPacketParser::ReadingLength ()
                 BitConverter::SwapEndian (_currentPacketLength);
         }
 
+        if (_currentPacketLength > 1000000)
+        {
+            Reset ();
+            return false;
+        }
         _currentState = &IdpPacketParser::ReadingFlags;
 
         return true;
