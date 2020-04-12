@@ -117,6 +117,12 @@ namespace IdpProtocol
             {
                 currentPacketLength = EndianBitConverter.Big.ToUInt32(lengthBytes, 0);
 
+                if(currentPacketLength > 1000000)
+                {
+                    Reset();
+                    return false;
+                }
+
                 currentState = WaitingForFlags;
 
                 return true;
