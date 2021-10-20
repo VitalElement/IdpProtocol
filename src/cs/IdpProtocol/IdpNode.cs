@@ -109,12 +109,16 @@ namespace IdpProtocol
                 OnPollTimerTick();
             });
         }
+        
+        protected bool TwoWayPing { get; set; }
+
+        public DateTime LastPing => _lastPing;
 
         public virtual void OnPollTimerTick ()
         {
             if (Address != UnassignedAddress && Enabled)
             {
-                SendRequest(1, OutgoingTransaction.Create((UInt16)NodeCommand.Ping, CreateTransactionId(), IdpCommandFlags.None));
+                SendRequest(1, OutgoingTransaction.Create((UInt16)NodeCommand.Ping, CreateTransactionId(), TwoWayPing ? IdpCommandFlags.ResponseExpected: IdpCommandFlags.None));
             }
         }
 
