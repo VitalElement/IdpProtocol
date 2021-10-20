@@ -143,9 +143,14 @@ namespace IdpProtocol
                         return false;
                     }
 
-                    await Task.Delay(500);
-
                     SendRequest(0x0001, OutgoingTransaction.Create((UInt16)NodeCommand.RecommendEnumeration, CreateTransactionId(), IdpCommandFlags.None));
+
+                    if (_enumerationSource.Task.IsCompleted)
+                    {
+                        return await _enumerationSource.Task;
+                    }
+
+                    await Task.Delay(500);
                 }
                 else
                 {
