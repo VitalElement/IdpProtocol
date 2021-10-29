@@ -8,7 +8,7 @@ NotifyingStreamAdaptor::NotifyingStreamAdaptor ()
 {
     _parser = new IdpPacketParser ();
 
-    Parser ().Stream (*_connection);
+    Parser ().Stream (_connection.get());
 
     Parser ().DataReceived += [this](auto sender, auto& e) {
         auto& args = static_cast<DataReceivedEventArgs&> (e);
@@ -47,7 +47,7 @@ void NotifyingStreamAdaptor::Connection (
             &(_connection->DataReceived +=
               [this](auto sender, auto& e) { this->Parser ().Parse (); });
 
-        this->Parser ().Stream (*_connection);
+        this->Parser ().Stream (_connection.get());
 
         this->IsReEnumerated (false);
         this->IsEnumerated (false);
@@ -55,6 +55,7 @@ void NotifyingStreamAdaptor::Connection (
     }
     else
     {
+        this->Parser().Stream(nullptr);
         this->IsActive (false);
     }
 }

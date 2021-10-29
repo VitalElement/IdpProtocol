@@ -12,15 +12,7 @@ IdpPacketParser::IdpPacketParser ()
     _pollTimer = std::unique_ptr<DispatcherTimer> (new DispatcherTimer (2));
 
     _pollTimer->Tick += [&](auto sender, auto& e) {
-        if (!_stream->IsValid ())
-        {
-            // _pollTimer->Stop ();
-            // this->Reset ();
-        }
-        else
-        {
-            this->Parse ();
-        }
+        this->Parse();
     };
 }
 
@@ -73,9 +65,10 @@ IStream& IdpPacketParser::Stream ()
     return *_stream;
 }
 
-void IdpPacketParser::Stream (IStream& value)
+void IdpPacketParser::Stream (IStream* value)
 {
-    _stream = &value;
+    _stream = value;
+    Reset();
 }
 
 bool IdpPacketParser::WaitingForStx ()

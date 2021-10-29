@@ -33,7 +33,7 @@ class IdpPacketParser
     Event PacketError;
 
     IStream& Stream ();
-    void Stream (IStream& value);
+    void Stream (IStream* value);
 
     void Parse ();
 
