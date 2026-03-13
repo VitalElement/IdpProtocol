@@ -315,30 +315,39 @@ namespace IdpProtocol
         private async Task EnumerateRouterAdaptor(UInt16 routerAddress)
         {
             var address = GetFreeAddress();
+            var routerDetectTransactionId = CreateTransactionId();
+            var responseTask = Manager.WaitForResponseAsync(routerDetectTransactionId, 500);
+            var request = OutgoingTransaction.Create((UInt16)NodeCommand.RouterEnumerateAdaptor, CreateTransactionId())
+                .Write(address)
+                .Write(routerDetectTransactionId);
 
-            var responseTask = Manager.WaitForResponseAsync((UInt16)NodeCommand.RouterDetect, 500);
-
-            var (success, response) = await SendRequestAsync(routerAddress, OutgoingTransaction.Create((UInt16)NodeCommand.RouterEnumerateAdaptor, CreateTransactionId()).Write(address));
+            var (success, response) = await SendRequestAsync(routerAddress, request);
 
             if (response != null && response.ResponseCode == IdpResponseCode.OK)
             {
-                var enumerated = response.Transaction.Read<bool>();
+                var adaptorEnumerated = response.Transaction.Read<bool>();
 
-                if (enumerated)
+                if (adaptorEnumerated)
                 {
-                    var routerDetectResponse = await responseTask;
+                    var adaptorProbed = response.Transaction.Read<bool>();
 
-                    if (routerDetectResponse != null && routerDetectResponse.ResponseCode == IdpResponseCode.OK)
+                    if (adaptorProbed)
                     {
-                        var routerEnumerated = routerDetectResponse.Transaction.Read<bool>();
+                        var routerDetectResponse = await responseTask;
 
-                        if (routerEnumerated)
+                        if (routerDetectResponse != null && routerDetectResponse.ResponseCode == IdpResponseCode.OK)
                         {
-                            await OnNodeAdded(routerAddress, address);
+                            var routerEnumerated = routerDetectResponse.Transaction.Read<bool>();
 
-                            return;
+                            if (routerEnumerated)
+                            {
+                                await OnNodeAdded(routerAddress, address);
+
+                                SendRequest(address, OutgoingTransaction.Create((UInt16)NodeCommand.MarkAdaptorConnected, CreateTransactionId(), IdpCommandFlags.None));
+
+                                return;
+                            }
                         }
-
                     }
                 }
             }

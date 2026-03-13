@@ -65,6 +65,11 @@ namespace IdpProtocol
                         {
                             _parser.Parse();
 
+                            if (_parser.ReadFailed)
+                            {
+                                throw new EndOfStreamException("IDP input stream closed.");
+                            }
+
                             await Task.Delay(1);
                         }
                     }

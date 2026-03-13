@@ -9,46 +9,6 @@ using System.Threading;
 
 namespace IdpProtocol
 {
-    public static class StreamExtension
-    {
-        public static bool TryReadData(this Stream stream, int length, out byte[] data)
-        {
-            data = new byte[length];
-
-            var read = 0;
-
-            while (read < length)
-            {
-                var currentRead = stream.Read(data, read, data.Length - read);
-
-                if(currentRead > 0)
-                {
-                    read += currentRead;
-                }
-
-                if (read < length)
-                {
-                    Thread.Sleep(2);
-                }
-            }
-
-            return true;
-        }
-
-        public static bool TryReadByte(this Stream stream, out byte value)
-        {
-            if (stream.TryReadData(1, out byte[] data))
-            {
-                value = data[0];
-
-                return true;
-            }
-
-            value = 0;
-            return false;
-        }
-    }
-
     public class IdpParser
     {
         private Stream incomingStream;
@@ -61,6 +21,7 @@ namespace IdpProtocol
         private UInt32 currentPacketCRC;
 
         public event EventHandler<PacketParsedEventArgs> PacketParsed;
+        public bool ReadFailed { get; private set; }
 
         public IdpParser(Stream source)
         {
@@ -71,6 +32,7 @@ namespace IdpProtocol
         public bool Parse()
         {
             bool dataProcessed = false;
+            ReadFailed = false;
 
             if (incomingStream is NetworkStream ns)
             {
@@ -86,9 +48,10 @@ namespace IdpProtocol
 
             while (currentState())
             {
+                dataProcessed = true;
             }
 
-            return true;
+            return dataProcessed;
         }
 
         private void Reset()
@@ -100,9 +63,50 @@ namespace IdpProtocol
             currentPacketFlags = IdpFlags.None;
         }
 
+        private bool TryReadData(int length, out byte[] data)
+        {
+            data = new byte[length];
+
+            var read = 0;
+
+            while (read < length)
+            {
+                var currentRead = incomingStream.Read(data, read, data.Length - read);
+
+                if (currentRead == 0)
+                {
+                    ReadFailed = true;
+                    data = null;
+                    return false;
+                }
+
+                read += currentRead;
+
+                if (read < length)
+                {
+                    Thread.Sleep(2);
+                }
+            }
+
+            return true;
+        }
+
+        private bool TryReadByte(out byte value)
+        {
+            value = 0;
+
+            if (!TryReadData(1, out var data))
+            {
+                return false;
+            }
+
+            value = data[0];
+            return true;
+        }
+
         private bool WaitingForStx()
         {
-            if (incomingStream.TryReadByte(out var data) && data == 0x02)
+            if (TryReadByte(out var data) && data == 0x02)
             {
                 currentState = WaitingForLength;
                 return true;
@@ -113,7 +117,7 @@ namespace IdpProtocol
 
         private bool WaitingForLength()
         {
-            if (incomingStream.TryReadData(4, out var lengthBytes))
+            if (TryReadData(4, out var lengthBytes))
             {
                 currentPacketLength = EndianBitConverter.Big.ToUInt32(lengthBytes, 0);
 
@@ -133,7 +137,7 @@ namespace IdpProtocol
 
         private bool WaitingForFlags()
         {
-            if (incomingStream.TryReadByte(out var value))
+            if (TryReadByte(out var value))
             {
                 currentPacketFlags = (IdpFlags)value;
 
@@ -153,7 +157,7 @@ namespace IdpProtocol
 
         private bool WaitingForSource()
         {
-            if (incomingStream.TryReadData(2, out var sourceBytes))
+            if (TryReadData(2, out var sourceBytes))
             {
                 currentPacketSource = EndianBitConverter.Big.ToUInt16(sourceBytes, 0);
 
@@ -167,7 +171,7 @@ namespace IdpProtocol
 
         private bool WaitingForDestination()
         {
-            if (incomingStream.TryReadData(2, out var destinationBytes))
+            if (TryReadData(2, out var destinationBytes))
             {
                 var destination = EndianBitConverter.Big.ToUInt16(destinationBytes, 0);
 
@@ -183,7 +187,7 @@ namespace IdpProtocol
 
         private bool WaitingForPayload()
         {
-            if (incomingStream.TryReadData((int)currentPacketLength - 11, out byte[] currentPacketPayload))
+            if (TryReadData((int)currentPacketLength - 11, out byte[] currentPacketPayload))
             {
                 currentPacket.Write(currentPacketPayload);
                 currentState = WaitingForEtx;
@@ -196,7 +200,7 @@ namespace IdpProtocol
 
         private bool WaitingForEtx()
         {
-            if (incomingStream.TryReadByte(out var value))
+            if (TryReadByte(out var value))
             {
                 if (value == 0x03)
                 {
@@ -225,7 +229,7 @@ namespace IdpProtocol
 
         private bool WaitingForCrc()
         {
-            if (incomingStream.TryReadData(4, out var lengthBytes))
+            if (TryReadData(4, out var lengthBytes))
             {
                 currentPacketCRC = BitConverter.ToUInt32(lengthBytes, 0);
 

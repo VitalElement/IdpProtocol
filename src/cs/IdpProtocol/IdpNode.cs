@@ -87,9 +87,12 @@ namespace IdpProtocol
 
                 if (requestedGuid == Guid)
                 {
-                    o.Write(Guid.ToByteArray());
+                    o.Write(Guid);
+                    o.WithResponseCode(IdpResponseCode.OK);
 
-                    return IdpResponseCode.OK;
+                    SendRequest(i.Source, o);
+
+                    return IdpResponseCode.Deferred;
                 }
 
                 return IdpResponseCode.Deferred;

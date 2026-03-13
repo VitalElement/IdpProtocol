@@ -3,8 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Threading.Tasks;
 
 namespace IdpProtocol
@@ -35,28 +33,26 @@ namespace IdpProtocol
         private Dictionary<UInt16, CommandHandler> _commandHandlers;
 
         private Dictionary<UInt16, ResponseHandler> _responseHandlers;
-
-        private Subject<IdpResponse> _onResponseReceived;
+        private Dictionary<UInt32, List<TaskCompletionSource<IdpResponse>>> _responseWaiters;
+        private readonly object _responseWaitersLock = new object();
 
         public IdpCommandManager()
         {
             _commandHandlers = new Dictionary<UInt16, CommandHandler>();
 
             _responseHandlers = new Dictionary<UInt16, ResponseHandler>();
-
-            _onResponseReceived = new Subject<IdpResponse>();
+            _responseWaiters = new Dictionary<uint, List<TaskCompletionSource<IdpResponse>>>();
 
             RegisterCommand(0xA000, (incomingTransaction, outgoingTransaction) =>
             {
                 var response = new IdpResponse(incomingTransaction);
 
-                if (_responseHandlers.ContainsKey(response.ResponseId))
+                if (!TryResolveWaiters(response))
                 {
-                    _responseHandlers[response.ResponseId](response);
-                }
-                else
-                {
-                    _onResponseReceived.OnNext(response);
+                    if (_responseHandlers.ContainsKey(response.ResponseId))
+                    {
+                        _responseHandlers[response.ResponseId](response);
+                    }
                 }
 
                 return IdpResponseCode.OK;
@@ -75,16 +71,28 @@ namespace IdpProtocol
 
         public async Task<IdpResponse> WaitForResponseAsync(UInt32 transactionId, UInt32 timeoutMs)
         {
-            try
-            {
-                var result = await _onResponseReceived.FirstOrDefaultAsync(r => r.TransactionId == transactionId).Timeout(TimeSpan.FromMilliseconds(timeoutMs));
+            var waiter = new TaskCompletionSource<IdpResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-                return result;
-            }
-            catch (TimeoutException)
+            lock (_responseWaitersLock)
             {
-                return null;
+                if (!_responseWaiters.ContainsKey(transactionId))
+                {
+                    _responseWaiters[transactionId] = new List<TaskCompletionSource<IdpResponse>>();
+                }
+
+                _responseWaiters[transactionId].Add(waiter);
             }
+
+            var completed = await Task.WhenAny(waiter.Task, Task.Delay(TimeSpan.FromMilliseconds(timeoutMs)));
+
+            if (completed == waiter.Task)
+            {
+                return await waiter.Task;
+            }
+
+            RemoveWaiter(transactionId, waiter);
+
+            return null;
         }
 
         public IdpPacket ProcessPayload(UInt16 nodeAddress, IdpPacket packet)
@@ -99,7 +107,7 @@ namespace IdpProtocol
 
                 var responseCode = _commandHandlers[incoming.CommandId](incoming, outgoing);
 
-                if (incoming.Flags.HasFlag(IdpCommandFlags.ResponseExpected))
+                if (incoming.Flags.HasFlag(IdpCommandFlags.ResponseExpected) && responseCode != IdpResponseCode.Deferred)
                 {
                     outgoing.WithResponseCode(responseCode);
 
@@ -115,6 +123,49 @@ namespace IdpProtocol
             }
 
             return null;
+        }
+
+        private bool TryResolveWaiters(IdpResponse response)
+        {
+            List<TaskCompletionSource<IdpResponse>> waiters = null;
+
+            lock (_responseWaitersLock)
+            {
+                if (_responseWaiters.TryGetValue(response.TransactionId, out waiters))
+                {
+                    _responseWaiters.Remove(response.TransactionId);
+                }
+            }
+
+            if (waiters == null)
+            {
+                return false;
+            }
+
+            foreach (var waiter in waiters)
+            {
+                waiter.TrySetResult(response);
+            }
+
+            return true;
+        }
+
+        private void RemoveWaiter(UInt32 transactionId, TaskCompletionSource<IdpResponse> waiter)
+        {
+            lock (_responseWaitersLock)
+            {
+                if (!_responseWaiters.TryGetValue(transactionId, out var waiters))
+                {
+                    return;
+                }
+
+                waiters.Remove(waiter);
+
+                if (waiters.Count == 0)
+                {
+                    _responseWaiters.Remove(transactionId);
+                }
+            }
         }
     }
 }
