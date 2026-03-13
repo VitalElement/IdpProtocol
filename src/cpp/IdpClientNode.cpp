@@ -18,10 +18,11 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
     _serverGuid = serverGuid;
 
     _lastPing = 0;
+    _pollTimerHandler = nullptr;
 
     _pollTimer = new DispatcherTimer (1000, false);
 
-    _pollTimer->Tick += [&](auto sender, auto& e) {
+    _pollTimerHandler = &(_pollTimer->Tick += [&](auto sender, auto& e) {
         if (_serverAddress == UnassignedAddress)
         {
             Trace::WriteLine ("Silent Reconnecting", "IdpClientNode");
@@ -62,11 +63,23 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
                 }
             }
         }
-    };
+    });
 }
 
 IdpClientNode::~IdpClientNode ()
 {
+    if (_pollTimer != nullptr)
+    {
+        if (_pollTimerHandler != nullptr)
+        {
+            _pollTimer->Tick -= *_pollTimerHandler;
+            _pollTimerHandler = nullptr;
+        }
+
+        _pollTimer->Stop ();
+        delete _pollTimer;
+        _pollTimer = nullptr;
+    }
 }
 
 bool IdpClientNode::SendRequest (std::shared_ptr<OutgoingTransaction> request,

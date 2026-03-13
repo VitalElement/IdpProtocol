@@ -7,6 +7,7 @@
 #include "IdpResponse.h"
 #include "IncomingTransaction.h"
 #include "OutgoingTransaction.h"
+#include "DispatcherTimer.h"
 #include <functional>
 #include <list>
 #include <map>
@@ -56,6 +57,8 @@ class IdpCommandManager
   private:
     void InvalidateTimeouts ();
 
+    DispatcherTimer* _pollTimer;
+    EventHandler* _pollTimerHandler;
     std::map<uint16_t, CommandHandler> _commandHandlers;
     std::map<uint32_t, ResponseHandlerTimeout> _transactionHandlers;
     std::map<uint16_t, ResponseHandler> _responseHandlers;

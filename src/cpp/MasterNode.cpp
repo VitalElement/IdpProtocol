@@ -13,10 +13,12 @@ MasterNode::MasterNode ()
     _nodesChanged = false;
     _isEnumerating = false;
     _queueEnumeration = false;
+    _pollTimerHandler = nullptr;
     _nextAddress = 2;
     _root = new NodeInfo (nullptr, MasterNodeAddress);
     _root->Guid = _guid;
     _root->Name = "Network.Master";
+    _root->NameOwned = false;
     _root->EnumerationState = NodeEnumerationState::Pending;
 
     _currentEnumerationNode = nullptr;
@@ -57,15 +59,35 @@ MasterNode::MasterNode ()
 
     _pollTimer = new DispatcherTimer (500);
 
-    _pollTimer->Tick += [&](auto sender, auto& e) {
+    _pollTimerHandler = &(_pollTimer->Tick += [&](auto sender, auto& e) {
         _pollTimer->Stop ();
 
         this->EnumerateNetwork ();
-    };
+    });
 }
 
 MasterNode::~MasterNode ()
 {
+    if (_pollTimer != nullptr)
+    {
+        if (_pollTimerHandler != nullptr)
+        {
+            _pollTimer->Tick -= *_pollTimerHandler;
+            _pollTimerHandler = nullptr;
+        }
+
+        _pollTimer->Stop ();
+        delete _pollTimer;
+        _pollTimer = nullptr;
+    }
+
+    for (auto it = _nodeInfo.begin (); it != _nodeInfo.end (); ++it)
+    {
+        delete it->second;
+    }
+
+    _nodeInfo.clear ();
+    _root = nullptr;
 }
 
 NodeInfo* MasterNode::NetworkTree ()
@@ -563,36 +585,49 @@ void MasterNode::OnNodeAdded (uint16_t parentAddress, uint16_t address)
 
     SendRequest (address, nodeInfoTransaction,
                  [&, address](std::shared_ptr<IdpResponse> response) {
+                     auto node = FindNode (address);
+
+                     if (node == nullptr)
+                     {
+                         this->OnEnumerate ();
+                         return;
+                     }
+
                      if (response != nullptr &&
                          response->ResponseCode () == IdpResponseCode::OK)
                      {
-                         _nodeInfo[address]->Guid =
-                             response->Transaction ()->ReadGuid ();
+                         node->Guid = response->Transaction ()->ReadGuid ();
 
-                         if (_nodeInfo[address]->Name != nullptr)
+                         if (node->NameOwned && node->Name != nullptr)
                          {
-                             delete[] _nodeInfo[address]->Name;
+                             delete[] node->Name;
                          }
 
-                         _nodeInfo[address]->Name =
+                         node->Name =
                              response->Transaction ()->ReadCString ();
+                         node->NameOwned = true;
 
-                         _nodeInfo[address]->Timeout =
+                         node->Timeout =
                              response->Transaction ()->Read<uint32_t> ();
 
-                         if (_nodeInfo[address]->IsRouter ())
+                         if (node->IsRouter ())
                          {
-                             _nodeInfo[address]->EnumerationState =
+                             node->EnumerationState =
                                  NodeEnumerationState::Pending;
                          }
                          else
                          {
-                             _nodeInfo[address]->EnumerationState =
+                             node->EnumerationState =
                                  NodeEnumerationState::Idle;
                          }
-
-                         this->OnEnumerate ();
                      }
+                     else
+                     {
+                         node->LastSeen = 0xFFFFFFFFFFFFFFFF;
+                         InvalidateNodes ();
+                     }
+
+                     this->OnEnumerate ();
                  });
 }
 

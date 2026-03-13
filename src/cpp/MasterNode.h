@@ -31,10 +31,20 @@ struct NodeInfo
     {
         Address = address;
         Name = nullptr;
+        NameOwned = false;
         LastSeen = Application::GetApplicationTime ();
+        Timeout = 4000;
         EnumerationState = NodeEnumerationState::Idle;
         Parent = parent;
         Name = nullptr;
+    }
+
+    ~NodeInfo ()
+    {
+        if (NameOwned && Name != nullptr)
+        {
+            delete[] Name;
+        }
     }
 
     bool IsRouter ()
@@ -43,6 +53,7 @@ struct NodeInfo
     }
 
     const char* Name;
+    bool NameOwned;
 
     uint16_t Address;
     uint64_t LastSeen;
@@ -62,6 +73,7 @@ class MasterNode : public IdpNode
   private:
     bool _nodesChanged;
     DispatcherTimer* _pollTimer;
+    EventHandler* _pollTimerHandler;
     uint16_t _nextAddress;
     std::stack<uint16_t> _freeAddresses;
     std::map<uint16_t, NodeInfo*> _nodeInfo;

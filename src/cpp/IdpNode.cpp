@@ -17,6 +17,7 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
     _timeout = 4000;
     _name = name;
     _lastPing = 0;
+    _pingTimerHandler = nullptr;
 
     Manager ().RegisterResponseHandler (
         static_cast<uint16_t> (NodeCommand::Ping),
@@ -75,11 +76,26 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
 
     _pingTimer = new DispatcherTimer (1000, false);
 
-    _pingTimer->Tick += [&](auto sender, auto& e) { this->OnPollTimerTick (); };
+    _pingTimerHandler =
+        &(_pingTimer->Tick +=
+          [&](auto sender, auto& e) { this->OnPollTimerTick (); });
 }
 
 IdpNode::~IdpNode ()
 {
+    if (_pingTimer != nullptr)
+    {
+        if (_pingTimerHandler != nullptr)
+        {
+            _pingTimer->Tick -= *_pingTimerHandler;
+            _pingTimerHandler = nullptr;
+        }
+
+        _pingTimer->Stop ();
+        delete _pingTimer;
+        _pingTimer = nullptr;
+    }
+
     delete _commandManager;
 }
 

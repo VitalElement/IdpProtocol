@@ -60,6 +60,7 @@ class IdpNode
     const char* _name;
     uint64_t _lastPing;
     DispatcherTimer* _pingTimer;
+    EventHandler* _pingTimerHandler;
     uint32_t _timeout;
 
   protected:

@@ -10,6 +10,9 @@
 
 IdpCommandManager::IdpCommandManager ()
 {
+    _pollTimer = nullptr;
+    _pollTimerHandler = nullptr;
+
     RegisterCommand (
         0xA000, [&](std::shared_ptr<IncomingTransaction> incoming,
                     std::shared_ptr<OutgoingTransaction> outgoing) {
@@ -41,16 +44,29 @@ IdpCommandManager::IdpCommandManager ()
             return IdpResponseCode::OK;
         });
 
-    auto& pollTimer = *new DispatcherTimer (10);
+    _pollTimer = new DispatcherTimer (10);
 
-    pollTimer.Tick +=
-        [&](auto sender, auto& e) { this->InvalidateTimeouts (); };
+    _pollTimerHandler =
+        &(_pollTimer->Tick +=
+          [&](auto sender, auto& e) { this->InvalidateTimeouts (); });
 
-    pollTimer.Start ();
+    _pollTimer->Start ();
 }
 
 IdpCommandManager::~IdpCommandManager ()
 {
+    if (_pollTimer != nullptr)
+    {
+        if (_pollTimerHandler != nullptr)
+        {
+            _pollTimer->Tick -= *_pollTimerHandler;
+            _pollTimerHandler = nullptr;
+        }
+
+        _pollTimer->Stop ();
+        delete _pollTimer;
+        _pollTimer = nullptr;
+    }
 }
 
 void IdpCommandManager::InvalidateTimeouts ()

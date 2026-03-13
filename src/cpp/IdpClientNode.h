@@ -19,6 +19,7 @@ class IdpClientNode : public IdpNode
     uint64_t _lastPing;
     uint16_t _serverAddress;
     DispatcherTimer* _pollTimer;
+    EventHandler* _pollTimerHandler;
     Guid_t _serverGuid;
 
   public:

@@ -6,6 +6,7 @@
 
 NotifyingStreamAdaptor::NotifyingStreamAdaptor ()
 {
+    _connectionHandler = nullptr;
     _parser = new IdpPacketParser ();
 
     Parser ().Stream (_connection.get());
@@ -19,6 +20,7 @@ NotifyingStreamAdaptor::NotifyingStreamAdaptor ()
 
 NotifyingStreamAdaptor::~NotifyingStreamAdaptor ()
 {
+    Connection (nullptr);
     delete _parser;
 }
 
