@@ -21,6 +21,8 @@ namespace IdpProtocol
 
         public event EventHandler ConnectionError;
 
+        public IIdpTraceSink? TraceSink { get; set; }
+
         public StreamAdaptor(IScheduler scheduler) : this(scheduler, new SimplePipeStream(), new SimplePipeStream())
         {
             IsActive = true;
@@ -37,6 +39,7 @@ namespace IdpProtocol
             Observable.FromEventPattern<PacketParsedEventArgs>(_parser, nameof(_parser.PacketParsed)).ObserveOn(scheduler)
                         .Subscribe(args =>
                         {
+                            TraceSink?.Trace(CreateTracePacket(IdpTrafficDirection.Inbound, args.EventArgs.Packet));
                             OnReceive(args.EventArgs.Packet);
                         });
         }
@@ -92,6 +95,7 @@ namespace IdpProtocol
                 {
                     OutputStream.Write(packet.Data, 0, packet.Data.Length);
                     OutputStream.Flush();
+                    TraceSink?.Trace(CreateTracePacket(IdpTrafficDirection.Outbound, packet));
                 }
                 catch (Exception e)
                 {
@@ -104,6 +108,19 @@ namespace IdpProtocol
             }
 
             return false;
+        }
+
+        private static IdpTracePacket CreateTracePacket(IdpTrafficDirection direction, IdpPacket packet)
+        {
+            return new IdpTracePacket
+            {
+                TimestampUtc = DateTime.UtcNow,
+                Direction = direction,
+                Source = packet.Source,
+                Destination = packet.Destination,
+                RawPacketBytes = (byte[])packet.Data.Clone(),
+                Packet = packet
+            };
         }
     }
 }
