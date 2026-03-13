@@ -149,10 +149,19 @@ namespace IdpProtocol
             }
             else if (typeof(T) == typeof(Guid))
             {
-                result = new Guid(Read<int>(), Read<short>(), Read<byte>(),
-                    Read<byte>(), Read<byte>(), Read<byte>(), 
-                    Read<byte>(), Read<byte>(), Read<byte>(), 
-                    Read<byte>(), Read<byte>());
+                var data1 = Read<uint>();
+                var data2 = Read<ushort>();
+                var data3 = Read<ushort>();
+                var data4 = new byte[8];
+
+                for (var i = 0; i < data4.Length; i++)
+                {
+                    data4[i] = Read<byte>();
+                }
+
+                result = new Guid((int)data1, (short)data2, (short)data3,
+                    data4[0], data4[1], data4[2], data4[3],
+                    data4[4], data4[5], data4[6], data4[7]);
 
                 increment = false;
             }

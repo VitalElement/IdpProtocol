@@ -161,7 +161,7 @@ namespace IdpProtocol.Tests
             var master = new MasterNode();
             var transmitter = new RecordingTransmit();
             var routerAddress = (ushort)0x0020;
-            var newAddress = (ushort)0x0021;
+            ushort newAddress = 0;
             uint nestedTransactionId = 0;
 
             AddRouterNode(master, routerAddress);
@@ -177,6 +177,7 @@ namespace IdpProtocol.Tests
                 if (commandId == (ushort)NodeCommand.RouterEnumerateAdaptor)
                 {
                     var requestedAddress = packet.Read<ushort>();
+                    newAddress = requestedAddress;
                     nestedTransactionId = packet.Read<uint>();
 
                     master.Manager.ProcessPayload(master.Address,
