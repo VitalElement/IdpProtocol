@@ -466,11 +466,18 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
                 {
                     this->OnNodeAdded (routerAddress, address);
 
+                    auto markParentAdaptorConnected = OutgoingTransaction::Create (
+                        static_cast<uint16_t> (
+                            NodeCommand::MarkAdaptorConnected),
+                        CreateTransactionId (), IdpCommandFlags::None);
+
                     auto markAdaptorConnected = OutgoingTransaction::Create (
                         static_cast<uint16_t> (
                             NodeCommand::MarkAdaptorConnected),
                         CreateTransactionId (), IdpCommandFlags::None);
 
+                    this->SendRequest (routerAddress,
+                                       markParentAdaptorConnected);
                     this->SendRequest (address, markAdaptorConnected);
                     return;
                 }

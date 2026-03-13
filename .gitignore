@@ -6,3 +6,6 @@
 Tests/IdpProtcocol\.UnitTests/build/bin/
 
 Tests/IdpProtocol\.UnitTests/build/bin/
+
+# Local ad hoc test build output
+build-cpp-tests/

@@ -343,6 +343,7 @@ namespace IdpProtocol
                             {
                                 await OnNodeAdded(routerAddress, address);
 
+                                SendRequest(routerAddress, OutgoingTransaction.Create((UInt16)NodeCommand.MarkAdaptorConnected, CreateTransactionId(), IdpCommandFlags.None));
                                 SendRequest(address, OutgoingTransaction.Create((UInt16)NodeCommand.MarkAdaptorConnected, CreateTransactionId(), IdpCommandFlags.None));
 
                                 return;
