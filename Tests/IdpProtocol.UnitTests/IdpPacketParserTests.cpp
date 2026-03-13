@@ -21,7 +21,7 @@ TEST_CASE ("Can parse a minimal packet with 1byte payload")
 
     auto originatorEndPointStream = parserEndPointStream->GetEndpoint ();
 
-    parser.Stream (*parserEndPointStream);
+    parser.Stream (parserEndPointStream);
 
     auto packet = new IdpPacket (1, IdpFlags::None);
 
@@ -67,7 +67,7 @@ TEST_CASE ("Can reconstruct a packet including ETX")
 
     auto originatorEndPointStream = parserEndPointStream->GetEndpoint ();
 
-    parser.Stream (*parserEndPointStream);
+    parser.Stream (parserEndPointStream);
 
     auto packet = new IdpPacket (1, IdpFlags::None);
 
