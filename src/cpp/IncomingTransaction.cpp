@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See licence.md file in the project root for
 // full license information.
 #include "IncomingTransaction.h"
+#include <cstring>
 
 IncomingTransaction::IncomingTransaction (std::shared_ptr<IdpPacket> packet)
 {
@@ -9,6 +10,26 @@ IncomingTransaction::IncomingTransaction (std::shared_ptr<IdpPacket> packet)
 
     _data = packet->Buffer ();
     _readIndex = 10;
+    _readLimit = packet->Length ();
+
+    if (((uint8_t) packet->Flags () & (uint8_t) IdpFlags::CRC) ==
+        (uint8_t) IdpFlags::CRC)
+    {
+        if (_readLimit < 4)
+        {
+            ThrowException (-1, "Invalid IDP packet length");
+        }
+
+        _readLimit -= 4;
+    }
+
+    if (_readLimit < 11)
+    {
+        ThrowException (-1, "Invalid IDP packet length");
+    }
+
+    // Exclude ETX from transaction payload reads.
+    _readLimit -= 1;
 
     _commandId = Read<uint16_t> ();
     _transactionId = Read<uint32_t> ();
@@ -54,8 +75,21 @@ uint16_t IncomingTransaction::Destination ()
 
 const char* IncomingTransaction::ReadCString ()
 {
-    // todo make this safe.
-    auto length = strlen ((const char*) (_data.get () + _readIndex)) + 1;
+    if (_readIndex > _readLimit)
+    {
+        ThrowException (-1, "IDP packet read out of bounds");
+    }
+
+    auto remaining = _readLimit - _readIndex;
+    auto terminator = static_cast<const char*> (
+        memchr (_data.get () + _readIndex, '\0', remaining));
+
+    if (terminator == nullptr)
+    {
+        ThrowException (-1, "Unterminated string in IDP packet");
+    }
+
+    auto length = (uint32_t) (terminator - (const char*) (_data.get () + _readIndex)) + 1;
 
     auto result = new char[length];
 
@@ -77,14 +111,24 @@ Guid_t IncomingTransaction::ReadGuid ()
 
 void IncomingTransaction::Read (void* destination, uint32_t length)
 {
+    EnsureReadable (length);
     memcpy (destination, (void*) (_data.get () + _readIndex), length);
     _readIndex += length;
 }
 
 void* IncomingTransaction::ConsumeData(uint32_t length)
 {
+    EnsureReadable (length);
     void* data = (void *) (_data.get() + _readIndex);
     _readIndex += length;
 
     return data;
+}
+
+void IncomingTransaction::EnsureReadable (uint32_t length)
+{
+    if (_readIndex > _readLimit || length > (_readLimit - _readIndex))
+    {
+        ThrowException (-1, "IDP packet read out of bounds");
+    }
 }

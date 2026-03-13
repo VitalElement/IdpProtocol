@@ -4,6 +4,7 @@
 #pragma once
 
 #include "BitConverter.h"
+#include "Exception.h"
 #include "Guid.h"
 #include "IdpPacket.h"
 #include "IdpTransaction.h"
@@ -34,6 +35,8 @@ class IncomingTransaction
     template<typename T>
     T Read ()
     {
+        EnsureReadable (sizeof (T));
+
         T result;
 
         memcpy (&result, _data.get () + _readIndex, sizeof (T));
@@ -71,7 +74,10 @@ class IncomingTransaction
     uint16_t Destination ();
 
   private:
+    void EnsureReadable (uint32_t length);
+
     uint32_t _readIndex;
+    uint32_t _readLimit;
     IdpCommandFlags _flags;
     uint16_t _commandId;
     uint32_t _transactionId;

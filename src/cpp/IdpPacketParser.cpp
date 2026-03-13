@@ -7,6 +7,8 @@
 
 IdpPacketParser::IdpPacketParser ()
 {
+    _stream = nullptr;
+    _currentPacketCRC = 0;
     Reset ();
 
     _pollTimer = std::unique_ptr<DispatcherTimer> (new DispatcherTimer (2));
@@ -18,7 +20,7 @@ IdpPacketParser::IdpPacketParser ()
 
 void IdpPacketParser::Parse ()
 {
-    if (Stream ().IsValid ())
+    if (_stream != nullptr && _stream->IsValid ())
     {
         while ((this->*_currentState) ())
         {
@@ -95,7 +97,7 @@ bool IdpPacketParser::ReadingLength ()
                 BitConverter::SwapEndian (_currentPacketLength);
         }
 
-        if (_currentPacketLength > 1000000)
+        if (_currentPacketLength < 11 || _currentPacketLength > 1000000)
         {
             Reset ();
             return false;
@@ -117,6 +119,12 @@ bool IdpPacketParser::ReadingFlags ()
         _currentPacketHasCRC = data & 0x01;
 
         _currentPacketFlags = (IdpFlags) data;
+
+        if (_currentPacketHasCRC && _currentPacketLength < 15)
+        {
+            Reset ();
+            return false;
+        }
 
         _currentState = &IdpPacketParser::ReadingSource;
 
@@ -159,7 +167,7 @@ bool IdpPacketParser::ReadingDestination ()
         }
 
         _currentPacket = std::shared_ptr<IdpPacket> (
-            new IdpPacket (_currentPacketLength - 11, _currentPacketFlags,
+            new IdpPacket (PayloadLength (), _currentPacketFlags,
                            _currentPacketSource, data, false));
 
         _currentState = &IdpPacketParser::WaitingForPayload;
