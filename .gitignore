@@ -9,3 +9,4 @@ Tests/IdpProtocol\.UnitTests/build/bin/
 
 # Local ad hoc test build output
 build-cpp-tests/
+src/.DS_Store
