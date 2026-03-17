@@ -272,25 +272,11 @@ void MasterNode::OnReset ()
 
 void MasterNode::ClearDiscoveredNodes ()
 {
-    auto it = _nodeInfo.begin ();
-
-    while (it != _nodeInfo.end ())
+    while (!_root->Children.empty ())
     {
-        auto current = it->second;
-
-        if (current == _root)
-        {
-            ++it;
-            continue;
-        }
-
-        if (current->Parent != nullptr)
-        {
-            current->Parent->Children.remove (current);
-        }
-
-        it = _nodeInfo.erase (it);
-        delete current;
+        auto* current = _root->Children.front ();
+        _root->Children.pop_front ();
+        DeleteDiscoveredSubtree (current);
     }
 
     _root->Children.clear ();
@@ -299,6 +285,19 @@ void MasterNode::ClearDiscoveredNodes ()
     _nextAddress = 2;
     _freeAddresses = std::stack<uint16_t> ();
     _nodesChanged = true;
+}
+
+void MasterNode::DeleteDiscoveredSubtree (NodeInfo* node)
+{
+    while (!node->Children.empty ())
+    {
+        auto* child = node->Children.front ();
+        node->Children.pop_front ();
+        DeleteDiscoveredSubtree (child);
+    }
+
+    _nodeInfo.erase (node->Address);
+    delete node;
 }
 
 void MasterNode::EnumerateNetwork ()

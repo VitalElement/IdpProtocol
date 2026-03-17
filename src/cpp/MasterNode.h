@@ -90,6 +90,7 @@ class MasterNode : public IdpNode
 
     void InvalidateNodes ();
     void ClearDiscoveredNodes ();
+    void DeleteDiscoveredSubtree (NodeInfo* node);
 
     void OnNodeAdded (uint16_t parentAddress, uint16_t address);
 
