@@ -25,6 +25,14 @@ IdpClientNode::IdpClientNode (Guid_t serverGuid, Guid_t guid, const char* name,
     _pollTimerHandler = &(_pollTimer->Tick += [&](auto sender, auto& e) {
         if (_serverAddress == UnassignedAddress)
         {
+            if (Address () == UnassignedAddress)
+            {
+                Trace::WriteLine (
+                    "Waiting for local address before reconnect",
+                    "IdpClientNode");
+                return;
+            }
+
             Trace::WriteLine ("Silent Reconnecting", "IdpClientNode");
 
             this->QueryInterface (_serverGuid);
@@ -160,10 +168,17 @@ void IdpClientNode::Connect ()
         Trace::WriteLine ("Connecting Client", "IdpClientNode");
 
         _lastPing = Application::GetApplicationTime ();
-
-        QueryInterface (_serverGuid);
-
         _pollTimer->Start ();
+
+        if (Address () != UnassignedAddress)
+        {
+            QueryInterface (_serverGuid);
+        }
+        else
+        {
+            Trace::WriteLine ("Connect deferred until local address assigned",
+                              "IdpClientNode");
+        }
     }
     else
     {
@@ -177,8 +192,34 @@ bool IdpClientNode::IsConnected ()
     return _serverAddress != UnassignedAddress;
 }
 
+void IdpClientNode::OnAddressAssigned (uint16_t address)
+{
+    IdpNode::OnAddressAssigned (address);
+
+    if (address == UnassignedAddress)
+    {
+        OnDisconnect ();
+        return;
+    }
+
+    if (_pollTimer != nullptr && _pollTimer->get_IsEnabled () &&
+        _serverAddress == UnassignedAddress)
+    {
+        Trace::WriteLine ("Local address assigned; querying interface",
+                          "IdpClientNode");
+        QueryInterface (_serverGuid);
+    }
+}
+
 void IdpClientNode::QueryInterface (Guid_t guid)
 {
+    if (Address () == UnassignedAddress)
+    {
+        Trace::WriteLine ("Skipping QueryInterface while local address is unassigned",
+                          "IdpClientNode");
+        return;
+    }
+
     Trace::WriteLine ("Broadcasting QueryInterface", "IdpClientNode");
 
     bool queried = IdpNode::SendRequest (

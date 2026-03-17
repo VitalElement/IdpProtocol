@@ -43,6 +43,7 @@ class IdpClientNode : public IdpNode
 
   protected:
     bool IsConnected ();
+    virtual void OnAddressAssigned (uint16_t address) override;
 
   private:
     void QueryInterface (Guid_t guid);
