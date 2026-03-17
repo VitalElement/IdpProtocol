@@ -89,6 +89,7 @@ class MasterNode : public IdpNode
     bool HandlePollResponse (uint16_t address);
 
     void InvalidateNodes ();
+    void ClearDiscoveredNodes ();
 
     void OnNodeAdded (uint16_t parentAddress, uint16_t address);
 

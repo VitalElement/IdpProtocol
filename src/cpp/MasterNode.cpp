@@ -256,6 +256,7 @@ void MasterNode::OnEnumerate ()
 
 void MasterNode::ResetNetwork ()
 {
+    OnReset ();
     SendRequest (0, OutgoingTransaction::Create (
                         static_cast<uint16_t> (NodeCommand::Reset),
                         CreateTransactionId (), IdpCommandFlags::None));
@@ -263,6 +264,41 @@ void MasterNode::ResetNetwork ()
 
 void MasterNode::OnReset ()
 {
+    ClearDiscoveredNodes ();
+    _currentEnumerationNode = nullptr;
+    _isEnumerating = false;
+    _queueEnumeration = false;
+}
+
+void MasterNode::ClearDiscoveredNodes ()
+{
+    auto it = _nodeInfo.begin ();
+
+    while (it != _nodeInfo.end ())
+    {
+        auto current = it->second;
+
+        if (current == _root)
+        {
+            ++it;
+            continue;
+        }
+
+        if (current->Parent != nullptr)
+        {
+            current->Parent->Children.remove (current);
+        }
+
+        it = _nodeInfo.erase (it);
+        delete current;
+    }
+
+    _root->Children.clear ();
+    _root->EnumerationState = NodeEnumerationState::Pending;
+    _root->LastSeen = Application::GetApplicationTime ();
+    _nextAddress = 2;
+    _freeAddresses = std::stack<uint16_t> ();
+    _nodesChanged = true;
 }
 
 void MasterNode::EnumerateNetwork ()
