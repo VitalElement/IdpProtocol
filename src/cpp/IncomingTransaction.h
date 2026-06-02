@@ -35,7 +35,10 @@ class IncomingTransaction
     template<typename T>
     T Read ()
     {
-        EnsureReadable (sizeof (T));
+        if (!EnsureReadable (sizeof (T)))
+        {
+            return T ();
+        }
 
         T result;
 
@@ -69,15 +72,19 @@ class IncomingTransaction
 
     Guid_t ReadGuid ();
 
+    bool HasReadFault ();
+
+    uint32_t Remaining ();
 
     uint16_t Source ();
     uint16_t Destination ();
 
   private:
-    void EnsureReadable (uint32_t length);
+    bool EnsureReadable (uint32_t length);
 
     uint32_t _readIndex;
     uint32_t _readLimit;
+    bool _readFault;
     IdpCommandFlags _flags;
     uint16_t _commandId;
     uint32_t _transactionId;

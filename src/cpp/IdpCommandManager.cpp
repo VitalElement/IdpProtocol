@@ -19,6 +19,11 @@ IdpCommandManager::IdpCommandManager ()
             auto response =
                 std::shared_ptr<IdpResponse> (new IdpResponse (incoming));
 
+            if (incoming->HasReadFault ())
+            {
+                return IdpResponseCode::InvalidParameters;
+            }
+
             auto it = _transactionHandlers.find (response->TransactionId ());
 
             if (it != _transactionHandlers.end ())
@@ -142,6 +147,14 @@ std::shared_ptr<IdpPacket>
 
     auto& outgoing = *outgoingTransaction;
 
+    if (incoming.HasReadFault ())
+    {
+        outgoing.Write ((uint8_t) IdpResponseCode::InvalidParameters);
+        outgoing.Write (incoming.CommandId ());
+
+        return outgoing.ToPacket (nodeAddress, packet->Source ());
+    }
+
     if (_commandHandlers.find (incoming.CommandId ()) !=
         _commandHandlers.end ())
     {
@@ -150,6 +163,11 @@ std::shared_ptr<IdpPacket>
 
         auto responseCode = _commandHandlers[incoming.CommandId ()](
             incomingTransaction, outgoingTransaction);
+
+        if (incoming.HasReadFault ())
+        {
+            responseCode = IdpResponseCode::InvalidParameters;
+        }
 
         if ((uint8_t) incoming.Flags () &
                 (uint8_t) IdpCommandFlags::ResponseExpected &&
