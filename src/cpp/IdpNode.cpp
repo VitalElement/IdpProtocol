@@ -54,6 +54,11 @@ IdpNode::IdpNode (Guid_t guid, const char* name, uint16_t address)
             std::shared_ptr<OutgoingTransaction> outgoing) {
             Guid_t requestedGuid = incoming->ReadGuid ();
 
+            if (incoming->HasReadFault ())
+            {
+                return IdpResponseCode::InvalidParameters;
+            }
+
             if (_guid == requestedGuid)
             {
                 outgoing->WriteGuid (_guid)->WithResponseCode (

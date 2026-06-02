@@ -351,7 +351,8 @@ void MasterNode::DetectRouter ()
                               auto nodeEnumerated =
                                   response->Transaction ()->Read<bool> ();
 
-                              if (nodeEnumerated)
+                              if (!response->Transaction ()->HasReadFault () &&
+                                  nodeEnumerated)
                               {
                                   _currentEnumerationNode->EnumerationState =
                                       NodeEnumerationState::Idle;
@@ -391,7 +392,8 @@ void MasterNode::EnumerateRouterNode (uint16_t routerAddress)
             {
                 auto nodeEnumerated = response->Transaction ()->Read<bool> ();
 
-                if (nodeEnumerated)
+                if (!response->Transaction ()->HasReadFault () &&
+                    nodeEnumerated)
                 {
                     this->OnNodeAdded (routerAddress, address);
 
@@ -497,7 +499,8 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
             {
                 auto nodeEnumerated = response->Transaction ()->Read<bool> ();
 
-                if (nodeEnumerated)
+                if (!response->Transaction ()->HasReadFault () &&
+                    nodeEnumerated)
                 {
                     this->OnNodeAdded (routerAddress, address);
 
@@ -542,12 +545,14 @@ void MasterNode::EnumerateRouterAdaptor (uint16_t routerAddress)
                 auto adaptorEnumerated =
                     response->Transaction ()->Read<bool> ();
 
-                if (adaptorEnumerated)
+                if (!response->Transaction ()->HasReadFault () &&
+                    adaptorEnumerated)
                 {
                     auto adaptorProbed =
                         response->Transaction ()->Read<bool> ();
 
-                    if (adaptorProbed)
+                    if (!response->Transaction ()->HasReadFault () &&
+                        adaptorProbed)
                     {
                         // we need to await the detect router response
                         // from the new router.
@@ -638,19 +643,34 @@ void MasterNode::OnNodeAdded (uint16_t parentAddress, uint16_t address)
                      if (response != nullptr &&
                          response->ResponseCode () == IdpResponseCode::OK)
                      {
-                         node->Guid = response->Transaction ()->ReadGuid ();
+                         auto guid = response->Transaction ()->ReadGuid ();
+                         auto name = response->Transaction ()->ReadCString ();
+                         auto timeout = response->Transaction ()->Read<uint32_t> ();
+
+                         if (response->Transaction ()->HasReadFault ())
+                         {
+                             if (name != nullptr)
+                             {
+                                 delete[] name;
+                             }
+
+                             node->LastSeen = 0xFFFFFFFFFFFFFFFF;
+                             InvalidateNodes ();
+                             this->OnEnumerate ();
+                             return;
+                         }
+
+                         node->Guid = guid;
 
                          if (node->NameOwned && node->Name != nullptr)
                          {
                              delete[] node->Name;
                          }
 
-                         node->Name =
-                             response->Transaction ()->ReadCString ();
+                         node->Name = name;
                          node->NameOwned = true;
 
-                         node->Timeout =
-                             response->Transaction ()->Read<uint32_t> ();
+                         node->Timeout = timeout;
 
                          if (node->IsRouter ())
                          {

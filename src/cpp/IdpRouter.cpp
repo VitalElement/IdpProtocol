@@ -25,6 +25,11 @@ IdpRouter::IdpRouter () : IdpNode (RouterGuid, "Network.Router")
             std::shared_ptr<OutgoingTransaction> outgoing) {
             auto address = incoming->Read<uint16_t> ();
 
+            if (incoming->HasReadFault ())
+            {
+                return IdpResponseCode::InvalidParameters;
+            }
+
             if (this->Address () == UnassignedAddress)
             {
                 this->Address (address);
@@ -48,6 +53,11 @@ IdpRouter::IdpRouter () : IdpNode (RouterGuid, "Network.Router")
             std::shared_ptr<OutgoingTransaction> outgoing) {
             auto address = incoming->Read<uint16_t> ();
 
+            if (incoming->HasReadFault ())
+            {
+                return IdpResponseCode::InvalidParameters;
+            }
+
             return this->HandleEnumerateNodesCommand (incoming->Source (),
                                                       address, outgoing);
         });
@@ -58,6 +68,11 @@ IdpRouter::IdpRouter () : IdpNode (RouterGuid, "Network.Router")
             std::shared_ptr<OutgoingTransaction> outgoing) {
             auto address = incoming->Read<uint16_t> ();
             auto transactionId = incoming->Read<uint32_t> ();
+
+            if (incoming->HasReadFault ())
+            {
+                return IdpResponseCode::InvalidParameters;
+            }
 
             return this->HandleEnumerateAdaptorCommand (
                 incoming->Source (), address, transactionId, outgoing);
